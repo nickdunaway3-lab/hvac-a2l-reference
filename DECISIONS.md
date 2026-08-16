@@ -158,6 +158,26 @@ Newest entries at the bottom.
   content like leak-detection sensors or line-set flush kits exists, and
   once real affiliate tags exist to configure.
 
+## Deployment (2026-08-16)
+
+- Cloudflare's dashboard nav has been reorganized (Pages is being folded into
+  Workers) and the old "Workers & Pages → Connect to Git" click-path no
+  longer matches what's on screen. Rather than chase a moving UI, deployed
+  via a scoped API token (Account → Cloudflare Pages → Edit only) and the
+  `wrangler` CLI instead — stable regardless of dashboard changes, and it's
+  the same tool the scheduled rebuild Action will use later, so this isn't a
+  throwaway path.
+- Live at **https://hvac-a2l-reference.pages.dev**. Verified content, not
+  just a 200: fetched the deployed equipment-matching page and confirmed all
+  27 pilot records rendered (7 Goodman + 7 Daikin outdoor models, exact row
+  count match) with every row correctly showing the `needs_review` /
+  "Unconfirmed" badge state.
+- `wrangler` added as a devDependency (needed locally and in CI; not needed
+  in the deployed output itself).
+- Not yet wired to auto-deploy on push — that lands with the scheduled
+  GitHub Action (re-ingest + rebuild + `wrangler pages deploy`), using the
+  same API token stored as a GitHub Actions secret, not committed anywhere.
+
 ## Tooling
 
 - Node.js LTS and GitHub CLI were not present on this machine; installed via
