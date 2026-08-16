@@ -60,7 +60,9 @@ function doPost(e) {
       sheet.appendRow([
         "submitted_at",
         "email",
-        "zip_or_state",
+        "zip",
+        "equipment_model",
+        "quoted_price",
         "message",
         "page_url",
         "user_agent",
@@ -70,7 +72,9 @@ function doPost(e) {
     sheet.appendRow([
       new Date().toISOString(),
       String(params.email || ""),
-      String(params.zipOrState || ""),
+      String(params.zip || ""),
+      String(params.equipmentModel || ""),
+      String(params.quotedPrice || ""),
       String(params.message || ""),
       String(params.pageUrl || ""),
       String(params.userAgent || ""),

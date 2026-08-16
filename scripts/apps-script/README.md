@@ -5,6 +5,14 @@ requires Google OAuth consent that can't be scripted. Takes about 10 minutes.
 `leadCapture.gs` in this folder is the source of truth — if you ever edit the
 script in the Apps Script editor, copy the change back into that file too.
 
+> **Already set this up once?** The form's fields changed (ZIP, equipment
+> model, and quoted price added) and the sheet's header row changed to match.
+> If your "Leads" sheet is still empty, no action needed — just paste the
+> updated `leadCapture.gs` into the editor and follow "Redeploying after an
+> edit" below. If you've already got a test row in there with the old columns
+> (email, zip_or_state, message...), clear the sheet's contents first, or the
+> new header won't get written and new columns will misalign with old ones.
+
 ## 1. Create the Sheet + script project
 
 1. Go to [sheets.google.com](https://sheets.google.com), create a new blank

@@ -26,13 +26,33 @@ const configured = Boolean(siteKey && endpoint);
       </div>
 
       <div class="field">
-        <label for="zipOrState">ZIP code or state</label>
-        <input type="text" id="zipOrState" name="zipOrState" autocomplete="postal-code" />
+        <label for="zip">ZIP code</label>
+        <input
+          type="text"
+          id="zip"
+          name="zip"
+          required
+          inputmode="numeric"
+          pattern="[0-9]{5}"
+          title="5-digit ZIP code"
+          maxlength="5"
+          autocomplete="postal-code"
+        />
       </div>
 
       <div class="field">
-        <label for="message">What does your quote say? (equipment, refrigerant, price — paste as much as you have)</label>
-        <textarea id="message" name="message" rows="5"></textarea>
+        <label for="equipmentModel">Equipment model on your quote (if you have it)</label>
+        <input type="text" id="equipmentModel" name="equipmentModel" autocomplete="off" placeholder="e.g. GSXN401810" />
+      </div>
+
+      <div class="field">
+        <label for="quotedPrice">Quoted price (if you have it)</label>
+        <input type="text" id="quotedPrice" name="quotedPrice" inputmode="decimal" autocomplete="off" placeholder="e.g. $8,500" />
+      </div>
+
+      <div class="field">
+        <label for="message">Anything else about your quote?</label>
+        <textarea id="message" name="message" rows="4"></textarea>
       </div>
 
       {/* Honeypot: real users never see or fill this. Bots that auto-fill
@@ -80,7 +100,9 @@ const configured = Boolean(siteKey && endpoint);
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
               email: formData.get("email"),
-              zipOrState: formData.get("zipOrState"),
+              zip: formData.get("zip"),
+              equipmentModel: formData.get("equipmentModel"),
+              quotedPrice: formData.get("quotedPrice"),
               message: formData.get("message"),
               website: formData.get("website"),
               turnstileToken,

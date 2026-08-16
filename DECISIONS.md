@@ -293,6 +293,126 @@ per model — and confirmed it before building.
   incremental, source-by-source work as equipment matching itself, not a
   one-time addition.
 
+## SEO audit and Phase A fixes (2026-08-16)
+
+User audit of the live site, six findings, all verified against the actual
+codebase before any code changed (not taken at face value, not dismissed
+either):
+
+1. **No indexable pages — confirmed, worse than described.** 3 static
+   pages total; the equipment-matching page's results only populate after
+   a debounced `input` event following 3+ typed characters, so even a
+   JS-executing crawler sees a permanently empty page (Googlebot doesn't
+   simulate typing). Also found and fixed in the same pass, not in the
+   original six: no `robots.txt`, no sitemap, no canonical tags anywhere.
+2. **Four of five content areas missing — confirmed exactly.** Zero batch
+   files in `line-set-reuse/`, `leak-detection/`, `state-code-adoption/`,
+   `refrigerant-availability/`.
+3. **No geographic dimension — confirmed exactly.** Zero state/city pages
+   anywhere in `src/pages`.
+4. **Methodology explanation crowding out content — confirmed.** Four
+   distinct blocks (homepage callout, equipment-matching callout,
+   `ConfidenceExplainer`, footer) repeating the same sourcing/confidence
+   explanation across the site.
+5. **Confidence ratio — corrected in the good direction.** Computed
+   directly from source YAML: 99.7% verified (8,596/8,623 after the Lennox
+   fix below), not inverted. The only `needs_review` content is the
+   original 27-record Goodman/Daikin pilot batch.
+6. **Lead capture — confirmed wired, honestly incomplete beyond that.**
+   Static inspection confirms correct `data-sitekey`/`data-endpoint` on the
+   live page. Cannot confirm an actual submission has reached the Sheet —
+   Turnstile requires a real browser solving a real challenge, not
+   something that can be scripted or asserted without a human doing it.
+
+Full findings and the proposed phased execution order were reported and
+approved before any code changed, per the user's explicit request not to
+touch anything until the audit was confirmed.
+
+### A real bug found while building the fix for Finding 1
+
+Generating one static page per outdoor-unit model required grouping
+equipment-match records by `(brand, outdoor_model)` for the first time —
+nothing before this had needed that grouping to be exactly right. Doing so
+surfaced a real, previously-shipped data quality bug: **~128 Lennox rows
+(1.5% of that batch) had the indoor coil model glommed onto the end of the
+outdoor model string** (e.g. `"ML14KC1-048-230A** CK40HT-42B+TDR"` as a
+single `outdoor_model` value), because `parseLennoxAcMatches.mjs`'s
+2+-space column split assumed a gap that collapses to a single space in
+the source PDF's layout for some long name combinations.
+
+This had been live and undetected since the Lennox batch shipped — the
+interactive search/browse tool just showed a slightly odd string in one
+column, not an obvious structural failure, so nothing surfaced it. Building
+one page per distinct model did, immediately, because each contaminated
+row produced its own fake "unique" outdoor model.
+
+**This means the "144 distinct models" figure reported in the SEO audit
+was wrong** — inflated by exactly this bug, since every contaminated row
+counted as its own model. The corrected, verified figure is **63** (Lennox
+49, not 130; Goodman 7; Daikin 7). Flagged to the user directly rather than
+left as a quiet correction, since it changes both a number they were given
+and the urgency of brand-expansion work.
+
+Fix, same discipline as every other ambiguous-data case on this site:
+checked whether the contaminated suffix could be reliably split back into
+a real outdoor model + coil model (some suffixes matched known coil-name
+prefixes, but not all — some were just a stray `"+"` marker with no
+recoverable meaning). No single rule covered both cases without guessing,
+so rather than half-fix it, `parseLennoxAcMatches.mjs` now rejects any row
+where the outdoor-model token contains whitespace, logs it as its own skip
+category, and excludes it. Re-fetched the source PDF fresh, re-ran the
+corrected parser, replaced the committed batch (8,656 → 8,528 records),
+verified zero remaining contamination and zero URL-slug collisions before
+building on top of it.
+
+### Phase A build
+
+- **Static per-model pages**: `/equipment/{brand}/{model}/` (63 pages),
+  plus `/equipment/{brand}/` brand indexes (3) and `/equipment/` (1) — 67
+  new fully-static, crawlable pages. Full match table, refrigerant, parts
+  (where sourced), provenance disclosures, and neighboring-model links all
+  render server-side with zero JavaScript required to see the content.
+  Verified via screenshot, not assumed: fetched the built HTML directly and
+  confirmed real AHRI numbers present (the exact check that proved
+  Finding 1's problem in the first place).
+- URL slugs strip characters like `**` (e.g. `ML13KC1-060-230A**` →
+  `ml13kc1-060-230a`) for readability. Checked for slug collisions before
+  building on top of the scheme — found 4 (a different, legitimate "+"
+  suffix case in two Lennox rows with genuinely different data, not the
+  contamination bug above) and built deterministic disambiguation
+  (`-2`, `-3`, ...) into `src/lib/equipmentPages.ts` rather than silently
+  merging or crashing. Turned out unnecessary after the contamination fix
+  (those specific rows were part of what got excluded), but the safety net
+  stays in for future data.
+- The interactive search/browse tool (`/equipment-matching/`) stays — it's
+  still useful, and the brief said search should be "a convenience layer,"
+  not removed. It's now secondary: nav and homepage point to `/equipment/`
+  first, with a cross-link into the interactive tool for people who already
+  know their model number.
+- `@astrojs/sitemap` added (official integration, not hand-rolled),
+  `site` set in `astro.config.mjs`, `robots.txt` added pointing to it.
+  Verified 71 URLs in the generated sitemap match the actual page count.
+- **Methodology consolidated** to `/methodology/`: the full explanation of
+  the four-field provenance model, the "never guess" rule with concrete
+  examples (not just the abstract claim), what an AHRI match means, and why
+  the AHRI Directory itself isn't scraped. Every other page trimmed to a
+  one-line link. The glossary (`EquipmentGlossary`) was explicitly left
+  alone — the user called it out as working, and it's terminology
+  (SEER2, EER2, Region...), not sourcing methodology, so it wasn't in scope
+  for this consolidation.
+- **Lead form**: ZIP code (now required, was optional "ZIP or state"),
+  equipment model, and quoted price added, per the explicit ask that a
+  lead's value depends on this. Apps Script header row and append logic
+  updated to match — noted in the setup README that an already-started
+  Sheet needs clearing first, since the header only gets (re)written when
+  the sheet is empty.
+- Found and fixed three instances of the same whitespace bug while
+  screenshotting the new pages: text ending right before an inline `<a>`
+  or `<strong>` tag on the next source line lost its space in Astro's
+  render output. Swept the rest of `src/pages` and `src/components` for
+  the same pattern afterward instead of fixing them one at a time as
+  found.
+
 ## Third usability pass: glossary, refrigerant column, brand badges (2026-08-16)
 
 Follow-up requests: brand pictures/logos, plain-English explanations for
