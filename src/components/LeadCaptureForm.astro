@@ -1,0 +1,159 @@
+---
+/**
+ * Homeowner lead capture: "get this quote reviewed." Submits client-side to
+ * a Google Apps Script Web App (see scripts/apps-script/), which verifies
+ * the Turnstile token server-side before writing anything to the Sheet.
+ *
+ * Degrades to a plain "temporarily unavailable" message if the required
+ * env vars aren't set yet, rather than shipping a form that silently fails
+ * or points nowhere — same rule as AffiliateLink.astro.
+ */
+const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+const endpoint = import.meta.env.PUBLIC_LEAD_CAPTURE_ENDPOINT;
+const configured = Boolean(siteKey && endpoint);
+---
+
+{
+  !configured ? (
+    <p class="lead-form-unavailable">
+      Quote review requests aren't open yet — check back soon.
+    </p>
+  ) : (
+    <form id="lead-capture-form" class="lead-form" data-endpoint={endpoint}>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email" />
+      </div>
+
+      <div class="field">
+        <label for="zipOrState">ZIP code or state</label>
+        <input type="text" id="zipOrState" name="zipOrState" autocomplete="postal-code" />
+      </div>
+
+      <div class="field">
+        <label for="message">What does your quote say? (equipment, refrigerant, price — paste as much as you have)</label>
+        <textarea id="message" name="message" rows="5"></textarea>
+      </div>
+
+      {/* Honeypot: real users never see or fill this. Bots that auto-fill
+         every field will, and we quietly no-op on the backend. */}
+      <div class="hp-field" aria-hidden="true">
+        <label for="website">Website</label>
+        <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+      </div>
+
+      <div class="cf-turnstile" data-sitekey={siteKey}></div>
+
+      <button type="submit">Get my quote reviewed</button>
+      <p class="form-status" role="status" aria-live="polite"></p>
+    </form>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script>
+      const form = document.getElementById("lead-capture-form") as HTMLFormElement | null;
+      const statusEl = form?.querySelector<HTMLParagraphElement>(".form-status");
+
+      form?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const endpoint = form.dataset.endpoint;
+        if (!endpoint || !statusEl) return;
+
+        const formData = new FormData(form);
+        // @ts-expect-error -- turnstile global is injected by the script tag above
+        const turnstileToken = window.turnstile?.getResponse();
+
+        if (!turnstileToken) {
+          statusEl.textContent = "Please complete the verification challenge above.";
+          return;
+        }
+
+        const submitButton = form.querySelector("button[type=submit]") as HTMLButtonElement;
+        submitButton.disabled = true;
+        statusEl.textContent = "Sending…";
+
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            // Deliberately text/plain, not application/json: keeps this a CORS
+            // "simple request" so the browser skips a preflight OPTIONS call,
+            // which the Apps Script backend can't answer. Parsed as JSON there
+            // regardless of the declared content type.
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              email: formData.get("email"),
+              zipOrState: formData.get("zipOrState"),
+              message: formData.get("message"),
+              website: formData.get("website"),
+              turnstileToken,
+              pageUrl: window.location.href,
+              userAgent: navigator.userAgent,
+            }),
+          });
+          const result = await response.json();
+          if (result.ok) {
+            form.reset();
+            statusEl.textContent = "Got it — we'll follow up by email.";
+          } else {
+            statusEl.textContent = "Something went wrong. Please try again in a moment.";
+            submitButton.disabled = false;
+          }
+        } catch {
+          statusEl.textContent = "Something went wrong. Please try again in a moment.";
+          submitButton.disabled = false;
+        }
+      });
+    </script>
+  )
+}
+
+<style>
+  .lead-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 32rem;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .field label {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .field input,
+  .field textarea {
+    border: 1px solid var(--line, #d9dee4);
+    border-radius: 0.35rem;
+    padding: 0.5rem 0.6rem;
+    font: inherit;
+  }
+  .hp-field {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+  .lead-form button[type="submit"] {
+    align-self: flex-start;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 0.35rem;
+    background: var(--link, #185ea8);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .lead-form button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .form-status {
+    font-size: 0.9rem;
+    min-height: 1.2rem;
+  }
+  .lead-form-unavailable {
+    color: var(--muted, #5b6472);
+  }
+</style>

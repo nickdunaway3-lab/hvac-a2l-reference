@@ -158,6 +158,33 @@ Newest entries at the bottom.
   content like leak-detection sensors or line-set flush kits exists, and
   once real affiliate tags exist to configure.
 
+## Lead capture (2026-08-16)
+
+- Built as designed earlier: Cloudflare Turnstile (client) → Google Apps
+  Script Web App (server-side Turnstile verification + Sheet write) → Google
+  Sheet. Source for the Apps Script side lives in
+  `scripts/apps-script/leadCapture.gs`, with setup steps in that folder's
+  README, because Apps Script deployment requires a Google OAuth
+  click-through that can't be scripted from outside a browser — this is a
+  one-time manual step, not a gap in automation.
+- The Turnstile *secret* key is never committed — it's stored in the Apps
+  Script project's Script Properties, set once through the Apps Script UI.
+  Only the *site* key (meant to be public) goes in the site's own env vars.
+- Client posts with `Content-Type: text/plain`, not `application/json`,
+  deliberately — keeps the request a CORS "simple request" so the browser
+  skips a preflight OPTIONS call, which Apps Script Web Apps have no way to
+  answer. The body is still parsed as JSON on the Apps Script side.
+- A honeypot field (`website`) is accepted silently rather than rejected, so
+  bots submitting it don't learn to adapt.
+- `<LeadCaptureForm>` renders a plain "not open yet" message instead of a
+  form when `PUBLIC_TURNSTILE_SITE_KEY` / `PUBLIC_LEAD_CAPTURE_ENDPOINT`
+  aren't set — verified this actually happens (checked the built HTML output
+  directly) rather than assuming the conditional works. Same rule as
+  `AffiliateLink`: never ship something that looks live but isn't.
+- First real page using it: `/get-your-quote-reviewed/`. Not yet wired to a
+  live Turnstile widget or a deployed Apps Script — both need the manual
+  browser steps described above, still pending.
+
 ## Deployment (2026-08-16)
 
 - Cloudflare's dashboard nav has been reorganized (Pages is being folded into
