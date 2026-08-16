@@ -222,6 +222,81 @@ at all for this pass — only presentation did.
   the site is open, submit the form once and confirm a row lands in the
   "Leads" sheet.
 
+## Expanding coverage + fixing "it's all just sourcing, no content" (2026-08-16)
+
+Feedback after the usability pass: the equipment-matching page felt thin —
+lots of provenance chrome (badges, source links, retrieval dates), not much
+actual answer. Root cause was real, not just presentation: the only data on
+the site was 27 hand-transcribed rows from one third-party distributor
+chart, so *nothing* could honestly be marked `verified` and every row was
+"Unconfirmed." That's a content-coverage problem as much as a design one.
+
+- Found that Lennox publishes its own official AHRI match bulletin directly
+  on lennox.com (Bulletin No. 210827, "Supersedes All Previous Versions") —
+  a primary manufacturer source, not a distributor's compilation. Data from
+  it can honestly carry `confidence: verified`.
+- The document is huge (~148k lines of extracted text, spanning both
+  current R-454B and legacy R-410A listings back to 2017-era ratings) and
+  has real structural inconsistency across product eras — different column
+  layouts depending on refrigerant/vintage, rows with missing capacity/EER2,
+  and line-wrap artifacts from `pdftotext`. Hand-transcribing this the way
+  the Goodman/Daikin pilot was done wasn't viable at this scale, and a naive
+  bulk parser risked silently mis-extracting values across that
+  inconsistency — which would be worse than the thin-content problem it was
+  meant to fix.
+- Wrote `scripts/ingest/parseLennoxAcMatches.mjs`: a strict parser that only
+  accepts lines matching a clean, validated pattern (recognizable
+  refrigerant token, unambiguous furnace column, exactly the expected count
+  of numeric fields) and *skips* — with a logged, categorized reason —
+  anything ambiguous rather than guessing through it. Filtered to R-454B
+  only (current A2L equipment is what this site is about; the legacy R-410A
+  rows in the same document are out of scope for now, not deleted from the
+  source, just not ingested).
+- Result: 8,656 of ~10,341 R-454B candidate rows parsed cleanly (the rest
+  skipped for a specific, logged reason — mostly ambiguous numeric-column
+  counts). Verified correctness by cross-referencing multiple extracted
+  records (start, middle, and end of the output) directly against the raw
+  source lines by hand — exact match on every field, including a row where
+  the source had no capacity/SEER2/EER2 data at all and the parser correctly
+  left those fields unset rather than inventing zeros.
+- One real anomaly found during verification: AHRI reference number
+  215582988 appears twice in the source — once as a complete row, once as
+  an orphaned fragment (just a stray number and "Yes All", almost certainly
+  a `pdftotext` line-wrap artifact from the PDF's layout). The parser
+  correctly discarded the fragment (too few columns to parse confidently)
+  and kept only the complete row. This is the same discipline as the
+  Goodman/Daikin batch's duplicate-AHRI-number handling: the script's
+  duplicate check still runs and would flag+downgrade to `needs_review` if
+  a duplicate *did* make it through, in case a future document has a case
+  where both halves parse cleanly.
+- Known limitation, stated plainly: this parser is conservative by design,
+  which means it undercounts the true table (some legitimate rows are
+  almost certainly lost to line-wrap fragmentation this approach can't
+  reassemble). That's the correct tradeoff for this site — an undercount is
+  an honest gap; a silently wrong row is not.
+- Schema gained three fields this batch's source data supports and that are
+  genuinely useful, not just "more data for its own sake": `eer2`,
+  `capacity_btu`, `energy_star`, and `region`. `region` matters specifically
+  — DOE regional efficiency standards restrict some systems to certain parts
+  of the country, so a region-restricted system on a quote outside its
+  region is a real, checkable red flag for the homeowner audience.
+- **Page architecture had to change along with the data volume.** Going
+  from 27 to 8,683 records meant the existing "render every row into the
+  page's HTML, filter with a small JS loop" approach would have produced a
+  multi-megabyte page — the opposite of fixing "not user friendly."
+  Replaced it with a static JSON endpoint
+  (`src/pages/data/equipment-matches.json.ts`, pre-rendered at build time,
+  no server involved) fetched client-side only once a visitor actually
+  searches (3-character minimum before anything renders, results capped at
+  200 with a "refine your search" message beyond that). Verified the fix
+  actually worked: the equipment-matching page itself is ~9KB regardless of
+  dataset size; the 3.9MB JSON only loads on interaction, not on page load.
+- `scripts/ingest/parseLennoxAcMatches.mjs` is the source of truth for this
+  batch, not the committed YAML — re-run it against a freshly fetched copy
+  of the PDF (via `pdftotext -layout`) to pick up Lennox's updates. Requires
+  poppler-utils (`pdftotext`) on whatever machine/CI runs it — noted here so
+  the scheduled GitHub Action remembers to install it.
+
 ## Deployment (2026-08-16)
 
 - Cloudflare's dashboard nav has been reorganized (Pages is being folded into

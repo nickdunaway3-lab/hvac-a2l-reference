@@ -1,11 +1,18 @@
 ---
 import { getCollection } from "astro:content";
 import Base from "../../layouts/Base.astro";
-import ProvenanceBadge from "../../components/ProvenanceBadge.astro";
 import ConfidenceExplainer from "../../components/ConfidenceExplainer.astro";
 
+// Only used for the brand chip counts shown before any search -- cheap
+// aggregate, not a full row dump into the page's HTML. Actual row data is
+// fetched client-side from /data/equipment-matches.json (see that file's
+// comment for why: this collection is ~8,700 records as of the Lennox
+// batch, too many to render into the page at build time.)
 const matches = await getCollection("equipmentMatches");
-const byBrand = Map.groupBy(matches, (m) => m.data.brand);
+const brandCounts = [...Map.groupBy(matches, (m) => m.data.brand).entries()]
+  .map(([brand, rows]) => ({ brand, count: rows.length }))
+  .sort((a, b) => b.count - a.count);
+const total = matches.length;
 ---
 
 <Base
@@ -24,58 +31,30 @@ const byBrand = Map.groupBy(matches, (m) => m.data.brand);
 
   <ConfidenceExplainer />
 
+  <p class="callout">
+    <strong>{total.toLocaleString()} matches</strong> across
+    {brandCounts.map((b, i) => (
+      <>
+        {i > 0 && ", "}
+        {b.brand} ({b.count.toLocaleString()})
+      </>
+    ))}
+    . Too many to list at once — search by model number below.
+  </p>
+
   <input
     type="search"
     id="table-search"
     class="table-search"
-    placeholder="Search by model number (e.g. GSXN401810)…"
+    placeholder="Search by model number (e.g. GSXN401810 or ML13KC1-060-230A)…"
     aria-label="Search equipment matches by model number"
   />
 
-  {
-    [...byBrand.entries()].map(([brand, rows]) => (
-      <section class="brand-section">
-        <h2>{brand}</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Outdoor unit</th>
-              <th>Indoor coil</th>
-              <th>Furnace</th>
-              <th>AHRI #</th>
-              <th>SEER / SEER2</th>
-              <th>Provenance</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr>
-                <td>{row.data.outdoor_model}</td>
-                <td>
-                  {row.data.indoor_model}
-                  {row.data.coil_orientation && (
-                    <div class="note">{row.data.coil_orientation}</div>
-                  )}
-                </td>
-                <td>{row.data.furnace_model ?? "—"}</td>
-                <td>{row.data.ahri_reference_number}</td>
-                <td>{row.data.seer2 ?? row.data.seer ?? "—"}</td>
-                <td>
-                  <ProvenanceBadge
-                    confidence={row.data.confidence}
-                    sourceUrl={row.data.source_url}
-                    retrievedAt={row.data.retrieved_at}
-                    notes={row.data.notes}
-                    ahriReferenceNumber={row.data.ahri_reference_number}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-    ))
-  }
+  <p id="search-status" class="note" role="status" aria-live="polite">
+    Type at least 3 characters of a model number to search.
+  </p>
+
+  <div id="results"></div>
 
   <div class="cta-box">
     <p>
@@ -89,23 +68,112 @@ const byBrand = Map.groupBy(matches, (m) => m.data.brand);
 </Base>
 
 <script>
-  const searchInput = document.getElementById("table-search") as HTMLInputElement | null;
-  const sections = document.querySelectorAll<HTMLElement>(".brand-section");
+  interface MatchRecord {
+    brand: string;
+    outdoor_model: string;
+    indoor_model: string;
+    coil_orientation: string | null;
+    furnace_model: string | null;
+    ahri_reference_number: string;
+    seer2: number | null;
+    seer: number | null;
+    eer2: number | null;
+    capacity_btu: number | null;
+    energy_star: boolean | null;
+    region: string | null;
+    refrigerant: string | null;
+    confidence: "verified" | "needs_review";
+    source_url: string;
+    retrieved_at: string;
+    notes: string | null;
+  }
 
-  searchInput?.addEventListener("input", () => {
+  const searchInput = document.getElementById("table-search") as HTMLInputElement;
+  const statusEl = document.getElementById("search-status")!;
+  const resultsEl = document.getElementById("results")!;
+  const MIN_QUERY_LENGTH = 3;
+  const MAX_RESULTS = 200;
+
+  let dataPromise: Promise<MatchRecord[]> | null = null;
+  function loadData() {
+    dataPromise ??= fetch("/data/equipment-matches.json").then((r) => r.json());
+    return dataPromise;
+  }
+
+  function escapeHtml(s: string) {
+    return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+  }
+
+  function renderRow(r: MatchRecord) {
+    const badgeClass = r.confidence === "verified" ? "verified" : "needs_review";
+    const badgeLabel = r.confidence === "verified" ? "Verified" : "Unconfirmed — check before relying on this";
+    const retrievedLabel = r.retrieved_at.slice(0, 10);
+    return `
+      <tr>
+        <td>${escapeHtml(r.brand)}</td>
+        <td>${escapeHtml(r.outdoor_model)}</td>
+        <td>${escapeHtml(r.indoor_model)}${r.coil_orientation ? `<div class="note">${escapeHtml(r.coil_orientation)}</div>` : ""}</td>
+        <td>${r.furnace_model ? escapeHtml(r.furnace_model) : "—"}</td>
+        <td>${r.seer2 ?? r.seer ?? "—"}</td>
+        <td>${r.region ?? "—"}</td>
+        <td>${r.ahri_reference_number}</td>
+        <td>
+          <span class="badge ${badgeClass}">${badgeLabel}</span>
+          ${r.notes ? `<p class="note">${escapeHtml(r.notes)}</p>` : ""}
+          <p class="source-links">
+            <a href="${r.source_url}" target="_blank" rel="noopener noreferrer">Source</a>
+            · retrieved ${retrievedLabel}
+            ·
+            <a href="https://www.ahridirectory.org/" target="_blank" rel="noopener noreferrer">
+              Verify AHRI #${r.ahri_reference_number} on ahridirectory.org
+            </a>
+            (search by "AHRI Reference #")
+          </p>
+        </td>
+      </tr>
+    `;
+  }
+
+  async function runSearch() {
     const query = searchInput.value.trim().toLowerCase();
+    if (query.length < MIN_QUERY_LENGTH) {
+      statusEl.textContent = `Type at least ${MIN_QUERY_LENGTH} characters of a model number to search.`;
+      resultsEl.innerHTML = "";
+      return;
+    }
 
-    sections.forEach((section) => {
-      const rows = section.querySelectorAll<HTMLTableRowElement>("tbody tr");
-      let visibleCount = 0;
+    statusEl.textContent = "Searching…";
+    const data = await loadData();
+    const matches = data.filter(
+      (r) =>
+        r.outdoor_model.toLowerCase().includes(query) ||
+        r.indoor_model.toLowerCase().includes(query) ||
+        (r.furnace_model?.toLowerCase().includes(query) ?? false) ||
+        r.ahri_reference_number.includes(query),
+    );
 
-      rows.forEach((row) => {
-        const matchesQuery = !query || row.textContent!.toLowerCase().includes(query);
-        row.style.display = matchesQuery ? "" : "none";
-        if (matchesQuery) visibleCount++;
-      });
+    const shown = matches.slice(0, MAX_RESULTS);
+    statusEl.textContent =
+      matches.length > MAX_RESULTS
+        ? `Showing first ${MAX_RESULTS} of ${matches.length.toLocaleString()} matches — refine your search to narrow it down.`
+        : `${matches.length.toLocaleString()} match${matches.length === 1 ? "" : "es"}.`;
 
-      section.style.display = visibleCount > 0 ? "" : "none";
-    });
+    resultsEl.innerHTML = shown.length
+      ? `<table>
+          <thead>
+            <tr>
+              <th>Brand</th><th>Outdoor unit</th><th>Indoor coil</th><th>Furnace</th>
+              <th>SEER / SEER2</th><th>Region</th><th>AHRI #</th><th>Provenance</th>
+            </tr>
+          </thead>
+          <tbody>${shown.map(renderRow).join("")}</tbody>
+        </table>`
+      : "";
+  }
+
+  let debounceTimer: ReturnType<typeof setTimeout>;
+  searchInput.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(runSearch, 150);
   });
 </script>

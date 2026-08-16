@@ -39,6 +39,13 @@ const equipmentMatches = defineCollection({
     ahri_reference_number: z.string(),
     seer2: z.number().optional(),
     seer: z.number().optional(),
+    eer2: z.number().optional(),
+    capacity_btu: z.number().optional(),
+    energy_star: z.boolean().optional(),
+    // DOE regional efficiency standards split the US into regions (North /
+    // Southeast / Southwest / "All"). A system rated for one region only is
+    // a real installation-legality question, not a nice-to-have.
+    region: z.string().optional(),
     // Only ever set this when a source explicitly states it — never inferred
     // from "this brand generally uses X." Most ingested rows will leave it
     // unset until a spec sheet confirms it per model.
