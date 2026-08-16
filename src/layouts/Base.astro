@@ -109,6 +109,9 @@ const { title, description, hasAffiliateLinks = false } = Astro.props;
       }
       .badge.verified { color: var(--verified); background: var(--verified-bg); }
       .badge.needs_review { color: var(--review); background: var(--review-bg); }
+      .badge.refrigerant-r454b { color: var(--accent); background: var(--accent-bg); }
+      .badge.refrigerant-r32 { color: var(--link); background: var(--link-bg); }
+      .badge.refrigerant-r410a { color: var(--muted); background: var(--bg-sunken); }
       .note {
         font-size: 0.83rem;
         color: var(--muted);
@@ -127,6 +130,7 @@ const { title, description, hasAffiliateLinks = false } = Astro.props;
       .row-details > summary::-webkit-details-marker { display: none; }
       .row-details > summary:hover { text-decoration: underline; }
       .row-details[open] > summary { margin-bottom: 0.4rem; }
+      .row-details-hint { color: var(--muted); font-weight: 500; }
       .row-details-content { padding-top: 0.15rem; }
       .callout {
         background: var(--bg-subtle);
@@ -292,6 +296,56 @@ const { title, description, hasAffiliateLinks = false } = Astro.props;
         background: var(--link-bg);
         border-color: var(--link);
         color: var(--link);
+      }
+
+      .brand-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: white;
+        margin-right: 0.45rem;
+        flex: none;
+        vertical-align: middle;
+      }
+      .brand-badge.goodman { background: #4f46e5; }
+      .brand-badge.daikin { background: #e11d48; }
+      .brand-badge.lennox { background: #b45309; }
+      .brand-badge.default-brand { background: #64748b; }
+      .brand-cell { display: inline-flex; align-items: center; }
+
+      .glossary {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--bg);
+        padding: 1.1rem 1.3rem;
+        margin: 0 0 1.5rem;
+      }
+      .glossary h2 { margin: 0 0 0.75rem; font-size: 1.02rem; }
+      .glossary dl {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 0.45rem 1rem;
+        margin: 0;
+      }
+      @media (max-width: 36rem) {
+        .glossary dl { grid-template-columns: 1fr; }
+        .glossary dt { margin-top: 0.5rem; }
+      }
+      .glossary dt {
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      .glossary dd {
+        margin: 0;
+        font-size: 0.87rem;
+        color: var(--muted);
       }
     </style>
   </head>

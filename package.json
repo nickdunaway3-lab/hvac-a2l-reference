@@ -16,6 +16,7 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
+    "playwright": "^1.62.1",
     "wrangler": "^4.123.0"
   }
 }

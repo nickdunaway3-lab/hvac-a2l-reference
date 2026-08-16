@@ -1,6 +1,7 @@
 ---
 import Base from "../../layouts/Base.astro";
 import ConfidenceExplainer from "../../components/ConfidenceExplainer.astro";
+import EquipmentGlossary from "../../components/EquipmentGlossary.astro";
 ---
 
 <Base
@@ -43,6 +44,8 @@ import ConfidenceExplainer from "../../components/ConfidenceExplainer.astro";
     <div class="chip-row" id="brand-chips"></div>
     <div class="model-list" id="model-list"></div>
   </div>
+
+  <EquipmentGlossary />
 
   <div id="results"></div>
 
@@ -112,21 +115,29 @@ import ConfidenceExplainer from "../../components/ConfidenceExplainer.astro";
     );
   }
 
+  const KNOWN_BRAND_CLASSES = new Set(["goodman", "daikin", "lennox"]);
+  function brandBadge(brand: string) {
+    const cls = KNOWN_BRAND_CLASSES.has(brand.toLowerCase()) ? brand.toLowerCase() : "default-brand";
+    const initial = brand.slice(0, 1).toUpperCase();
+    return `<span class="brand-badge ${cls}" aria-hidden="true">${initial}</span>`;
+  }
+
   function renderRow(r: MatchRecord) {
     const retrievedLabel = r.retrieved_at.slice(0, 10);
     const badgeClass = r.confidence === "verified" ? "verified" : "needs_review";
     const badgeLabel = r.confidence === "verified" ? "Verified" : "Unconfirmed — check before relying on this";
     return `
       <tr>
-        <td>${escapeHtml(r.brand)}</td>
+        <td><span class="brand-cell">${brandBadge(r.brand)}${escapeHtml(r.brand)}</span></td>
         <td>${escapeHtml(r.outdoor_model)}</td>
         <td>${escapeHtml(r.indoor_model)}${r.coil_orientation ? `<div class="note">${escapeHtml(r.coil_orientation)}</div>` : ""}</td>
         <td>${r.furnace_model ? escapeHtml(r.furnace_model) : "—"}</td>
+        <td>${r.refrigerant ? `<span class="badge refrigerant-${r.refrigerant.toLowerCase().replace(/[^a-z0-9]/g, "")}">${r.refrigerant}</span>` : `<span class="note">not stated in source</span>`}</td>
         <td>${r.seer2 ?? r.seer ?? "—"}</td>
         <td>${r.region ?? "—"}</td>
         <td>
           <details class="row-details">
-            <summary>${r.ahri_reference_number}</summary>
+            <summary>${r.ahri_reference_number} <span class="row-details-hint">— source &amp; confidence ▾</span></summary>
             <div class="row-details-content">
               <span class="badge ${badgeClass}">${badgeLabel}</span>
               ${r.notes ? `<p class="note">${escapeHtml(r.notes)}</p>` : ""}
@@ -160,7 +171,7 @@ import ConfidenceExplainer from "../../components/ConfidenceExplainer.astro";
           <thead>
             <tr>
               <th>Brand</th><th>Outdoor unit</th><th>Indoor coil</th><th>Furnace</th>
-              <th>SEER / SEER2</th><th>Region</th><th>AHRI #</th>
+              <th>Refrigerant</th><th>SEER / SEER2</th><th>Region</th><th>AHRI #</th>
             </tr>
           </thead>
           <tbody>${shown.map(renderRow).join("")}</tbody>
@@ -208,7 +219,7 @@ import ConfidenceExplainer from "../../components/ConfidenceExplainer.astro";
       .sort((a, b) => b[1] - a[1])
       .map(
         ([brand, count]) =>
-          `<button class="chip" data-brand="${escapeHtml(brand)}" aria-pressed="false">${escapeHtml(brand)} (${count.toLocaleString()})</button>`,
+          `<button class="chip" data-brand="${escapeHtml(brand)}" aria-pressed="false">${brandBadge(brand)}${escapeHtml(brand)} (${count.toLocaleString()})</button>`,
       )
       .join("");
 

@@ -222,6 +222,45 @@ at all for this pass — only presentation did.
   the site is open, submit the form once and confirm a row lands in the
   "Leads" sheet.
 
+## Third usability pass: glossary, refrigerant column, brand badges (2026-08-16)
+
+Follow-up requests: brand pictures/logos, plain-English explanations for
+every term on the page, and — separately caught during this pass — the
+refrigerant type wasn't displayed anywhere despite being the entire point
+of the site.
+
+- **Logos**: flagged before building anything. Using manufacturers' real
+  trademarked logos is generally fine under nominative fair use (common
+  practice on comparison sites), but it requires sourcing legitimate image
+  files (ideally each manufacturer's press/media kit), not scraping
+  whatever image search turns up, and this is a commercial (affiliate +
+  lead-gen) site so it's worth the user knowing before it happens. Built
+  colored initial badges instead for now (zero licensing question, own
+  CSS) — real logos remain an option if the user wants to source them.
+- **Glossary**: `EquipmentGlossary.astro`, visible by default (not a
+  collapsed toggle), defining every column in plain language — Outdoor
+  unit, Indoor coil (+ upflow/horizontal), Furnace, Refrigerant, SEER/SEER2,
+  EER2, Region, AHRI #, Capacity, Energy Star. Placed after the
+  search/browse controls (keeping search first, per the prior request) and
+  before the results.
+- **Refrigerant column was missing entirely** — the data was extracted and
+  stored (Lennox rows: R-454B; Goodman/Daikin rows: deliberately unset,
+  since that source document never stated it) but never rendered anywhere
+  on the page. Added as its own column with a colored badge; rows with no
+  sourced value show "not stated in source," not a blank cell and not an
+  inferred guess.
+- Made the per-row disclosure affordance self-explanatory: it used to be
+  just a bare AHRI number as the click target, which isn't obviously
+  interactive. Now reads "208786152 — source & confidence ▾".
+- Playwright is being kept as a standing devDependency now rather than
+  installed/removed each time — this is the third round of "screenshot
+  before shipping" in one session, and it's already caught one real bug
+  (the `is:global` issue) that source review alone missed.
+- Verified via screenshot again before deploying, not assumed: refrigerant
+  badges render correctly per brand (R-454B for Lennox, "not stated in
+  source" for Goodman), glossary renders in full, expanded row-details show
+  the complete verified state.
+
 ## Second usability pass: search-first, browse tab, real visual design (2026-08-16)
 
 Follow-up request: remove the "Unconfirmed" wording from default view, put

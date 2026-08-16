@@ -1,0 +1,51 @@
+---
+/**
+ * Plain-English definitions for every column/term on the equipment-matching
+ * page. Visible by default, not tucked behind a toggle -- "make this easy
+ * to understand" means it shouldn't require an extra click to find.
+ */
+const terms: [string, string][] = [
+  ["Outdoor unit", "The condenser/compressor unit that sits outside your home."],
+  [
+    "Indoor coil",
+    'The part inside your air handler or furnace that connects to the outdoor unit. "Upflow" means air blows up through it (typical with a basement furnace); "horizontal" means air blows sideways (typical in an attic or crawlspace setup).',
+  ],
+  ["Furnace", "The gas furnace paired with this coil, where applicable — some setups use an air handler instead."],
+  [
+    "Refrigerant",
+    'The coolant this system runs on. R-454B and R-32 are the new "A2L" refrigerants replacing R-410A industry-wide — this is what the whole site is about. It matters because line-set reuse, oil compatibility, and leak-detection requirements are all different depending on which one your equipment uses. When this shows "not stated in source," it means the document we pulled this match from didn\'t list a refrigerant for that row — we don\'t guess it from the brand.',
+  ],
+  [
+    "SEER / SEER2",
+    "Efficiency rating — higher number means the system uses less electricity for the same cooling. This is usually the number quoted to you; higher generally costs more upfront but less to run.",
+  ],
+  [
+    "EER2",
+    "A second efficiency number, measured under hot, high-demand conditions rather than an average day. Matters most if you're in a hot climate.",
+  ],
+  [
+    "Region",
+    'Federal minimum efficiency rules differ by part of the country (North / Southeast / Southwest). If a system shows a region other than "All" and it doesn\'t match where you live, that\'s worth asking your contractor about — it may not be legal to install there.',
+  ],
+  [
+    "AHRI #",
+    "A certificate number proving this exact combination was independently tested, not just claimed by the manufacturer. Click it to see where the data came from and how to look it up yourself.",
+  ],
+  ["Capacity (BTU)", "How much heating/cooling power the system delivers. Needs to be sized to your home — bigger isn't automatically better."],
+  ["Energy Star", "Whether this specific combination qualifies for the EPA's ENERGY STAR certification — can matter for rebates or tax incentives."],
+];
+---
+
+<div class="glossary">
+  <h2>What these terms mean</h2>
+  <dl>
+    {
+      terms.map(([term, definition]) => (
+        <>
+          <dt>{term}</dt>
+          <dd>{definition}</dd>
+        </>
+      ))
+    }
+  </dl>
+</div>
