@@ -1,0 +1,195 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../../../../layouts/Base.astro";
+import { getModelGroups } from "../../../../lib/equipmentPages";
+
+export async function getStaticPaths() {
+  const groups = await getModelGroups();
+  return groups.map((g) => ({
+    params: { brand: g.brandSlug, model: g.modelSlug },
+    props: { group: g },
+  }));
+}
+
+const { group } = Astro.props;
+const { brand, brandSlug, outdoorModel, modelSlug, records } = group;
+
+const allParts = await getCollection("parts");
+const parts = allParts.filter((p) => p.data.brand === brand && p.data.outdoor_model === outdoorModel);
+
+// Neighboring models within the same brand, for internal linking -- simple
+// alphabetical adjacency, not a series-detection heuristic that could be
+// wrong about what's actually "related."
+const allGroups = await getModelGroups();
+const brandModels = allGroups.filter((g) => g.brandSlug === brandSlug).sort((a, b) => a.outdoorModel.localeCompare(b.outdoorModel));
+const currentIndex = brandModels.findIndex((g) => g.modelSlug === modelSlug);
+const neighbors = [
+  ...brandModels.slice(Math.max(0, currentIndex - 2), currentIndex),
+  ...brandModels.slice(currentIndex + 1, currentIndex + 3),
+];
+
+const refrigerants = [...new Set(records.map((r) => r.data.refrigerant).filter(Boolean))];
+const singleRefrigerant = refrigerants.length === 1 ? refrigerants[0] : null;
+
+const retrievedLabel = (d: Date) => d.toISOString().slice(0, 10);
+---
+
+<Base
+  title={`${outdoorModel} AHRI Matches`}
+  description={`AHRI-certified indoor coils and furnaces that match the ${brand} ${outdoorModel} outdoor unit, with refrigerant type and sourced replacement parts.`}
+>
+  <p><a href="/equipment/">All brands</a> / <a href={`/equipment/${brandSlug}/`}>{brand}</a></p>
+  <h1>{outdoorModel}: AHRI-Certified Matches</h1>
+  <p>
+    {records.length} AHRI-certified indoor coil{records.length === 1 ? "" : "s"}/furnace combination{records.length === 1 ? "" : "s"} match
+    the {brand} {outdoorModel} outdoor unit.
+    {singleRefrigerant && (
+      <>
+        {" "}It runs on <strong>{singleRefrigerant}</strong>.
+      </>
+    )}
+    {" "}An AHRI match means AHRI (the industry certification body) independently verified this
+    exact combination performs the way {brand} claims — see <a href="/methodology/">how this site sources and verifies data</a>.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Indoor coil</th>
+        <th>Furnace</th>
+        <th>Refrigerant</th>
+        <th>SEER / SEER2</th>
+        <th>Region</th>
+        <th>AHRI #</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        records.map((r) => (
+          <tr>
+            <td>
+              {r.data.indoor_model}
+              {r.data.coil_orientation && <div class="note">{r.data.coil_orientation}</div>}
+            </td>
+            <td>{r.data.furnace_model ?? "—"}</td>
+            <td>
+              {r.data.refrigerant ? (
+                <span class={`badge refrigerant-${r.data.refrigerant.toLowerCase().replace(/[^a-z0-9]/g, "")}`}>
+                  {r.data.refrigerant}
+                </span>
+              ) : (
+                <span class="note">not stated in source</span>
+              )}
+            </td>
+            <td>{r.data.seer2 ?? r.data.seer ?? "—"}</td>
+            <td>{r.data.region ?? "—"}</td>
+            <td>
+              <details class="row-details">
+                <summary>
+                  {r.data.ahri_reference_number} <span class="row-details-hint">— source &amp; confidence ▾</span>
+                </summary>
+                <div class="row-details-content">
+                  <span class={`badge ${r.data.confidence}`}>
+                    {r.data.confidence === "verified" ? "Verified" : "Unconfirmed — check before relying on this"}
+                  </span>
+                  {r.data.notes && <p class="note">{r.data.notes}</p>}
+                  <p class="source-links">
+                    <a href={r.data.source_url} target="_blank" rel="noopener noreferrer">Source</a>
+                    {" "}· retrieved {retrievedLabel(r.data.retrieved_at)} ·{" "}
+                    <a href="https://www.ahridirectory.org/" target="_blank" rel="noopener noreferrer">
+                      Verify on ahridirectory.org
+                    </a>{" "}
+                    (search by "AHRI Reference #")
+                  </p>
+                </div>
+              </details>
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+
+  {
+    parts.length > 0 && (
+      <>
+        <h2>Parts for {outdoorModel}</h2>
+        <p class="note">
+          Official manufacturer part numbers for this unit, not a guess at what tends to fail —
+          see <a href="/methodology/">methodology</a> for why. "Find this part" searches RepairClinic.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Part #</th>
+              <th>Description</th>
+              <th>Shop</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {parts.map((p) => (
+              <tr>
+                <td>{p.data.part_number}</td>
+                <td>
+                  {p.data.description}
+                  {p.data.category && <div class="note">{p.data.category}</div>}
+                </td>
+                <td>
+                  <a
+                    href={`https://www.repairclinic.com/Shop-For-Parts?query=${encodeURIComponent(p.data.part_number)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Find this part
+                  </a>
+                </td>
+                <td>
+                  <details class="row-details">
+                    <summary>source &amp; confidence ▾</summary>
+                    <div class="row-details-content">
+                      <span class={`badge ${p.data.confidence}`}>
+                        {p.data.confidence === "verified" ? "Verified" : "Unconfirmed"}
+                      </span>
+                      <p class="source-links">
+                        <a href={p.data.source_url} target="_blank" rel="noopener noreferrer">Source</a>
+                        {" "}· retrieved {retrievedLabel(p.data.retrieved_at)}
+                      </p>
+                    </div>
+                  </details>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </>
+    )
+  }
+
+  <div class="cta-box">
+    <p>
+      <strong>Got a quote listing this equipment?</strong>
+      An AHRI match confirms the equipment is certified to work together — it doesn't tell you
+      whether the price, the refrigerant, or the extras on your specific quote are reasonable.
+    </p>
+    <a class="button" href="/get-your-quote-reviewed/">Get your quote reviewed</a>
+  </div>
+
+  {
+    neighbors.length > 0 && (
+      <>
+        <h2>Other {brand} models</h2>
+        <div class="model-list">
+          {neighbors.map((n) => (
+            <a class="model-chip" href={`/equipment/${n.brandSlug}/${n.modelSlug}/`}>
+              {n.outdoorModel}
+            </a>
+          ))}
+          <a class="model-chip" href={`/equipment/${brandSlug}/`}>
+            All {brand} models →
+          </a>
+        </div>
+      </>
+    )
+  }
+</Base>

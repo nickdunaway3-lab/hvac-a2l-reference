@@ -1,6 +1,5 @@
 ---
 import Base from "../../layouts/Base.astro";
-import ConfidenceExplainer from "../../components/ConfidenceExplainer.astro";
 import EquipmentGlossary from "../../components/EquipmentGlossary.astro";
 ---
 
@@ -11,6 +10,7 @@ import EquipmentGlossary from "../../components/EquipmentGlossary.astro";
   <h1>Equipment matching</h1>
   <p class="note" style="margin-bottom: 1.25rem;">
     Search a model number from your quote, or browse by brand if you don't have one handy.
+    Prefer a plain list? <a href="/equipment/">Browse the equipment directory →</a>
   </p>
 
   <div class="tabs" role="tablist">
@@ -50,15 +50,6 @@ import EquipmentGlossary from "../../components/EquipmentGlossary.astro";
   <div id="results"></div>
   <div id="parts-results"></div>
 
-  <p class="callout">
-    <strong>What "AHRI match" and the source links mean:</strong> AHRI (the industry
-    certification body) independently verifies that a specific outdoor unit, indoor
-    coil, and furnace perform together the way the manufacturer claims — that's what
-    being listed here confirms. Every row links to exactly where its data came from
-    and when we retrieved it, so you (or your contractor) can double-check it
-    yourself.
-  </p>
-
   <div class="cta-box">
     <p>
       <strong>Found your equipment above but still not sure what your quote means?</strong>
@@ -68,8 +59,6 @@ import EquipmentGlossary from "../../components/EquipmentGlossary.astro";
     </p>
     <a class="button" href="/get-your-quote-reviewed/">Get your quote reviewed</a>
   </div>
-
-  <ConfidenceExplainer />
 </Base>
 
 <script>

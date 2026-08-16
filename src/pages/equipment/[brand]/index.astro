@@ -1,0 +1,39 @@
+---
+import Base from "../../../layouts/Base.astro";
+import { getModelGroups } from "../../../lib/equipmentPages";
+
+export async function getStaticPaths() {
+  const groups = await getModelGroups();
+  const byBrandSlug = Map.groupBy(groups, (g) => g.brandSlug);
+  return [...byBrandSlug.entries()].map(([brandSlug, models]) => ({
+    params: { brand: brandSlug },
+    props: { brand: models[0].brand, models },
+  }));
+}
+
+const { brand, models } = Astro.props;
+const sorted = [...models].sort((a, b) => a.outdoorModel.localeCompare(b.outdoorModel));
+---
+
+<Base
+  title={`${brand} equipment`}
+  description={`AHRI-certified A2L equipment matches for ${brand} outdoor units, by model.`}
+>
+  <p><a href="/equipment/">← All brands</a></p>
+  <h1>{brand} equipment</h1>
+  <p>
+    {sorted.length.toLocaleString()} {brand} outdoor unit model{sorted.length === 1 ? "" : "s"} with
+    AHRI-certified matches on file. Select a model to see its full match list, refrigerant, and
+    any sourced replacement parts.
+  </p>
+
+  <div class="model-list">
+    {
+      sorted.map((m) => (
+        <a class="model-chip" href={`/equipment/${m.brandSlug}/${m.modelSlug}/`}>
+          {m.outdoorModel}
+        </a>
+      ))
+    }
+  </div>
+</Base>

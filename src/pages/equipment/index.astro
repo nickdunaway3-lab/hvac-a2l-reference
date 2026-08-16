@@ -1,0 +1,42 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getModelGroups } from "../../lib/equipmentPages";
+
+const groups = await getModelGroups();
+const byBrand = Map.groupBy(groups, (g) => g.brand);
+const brandSummaries = [...byBrand.entries()]
+  .map(([brand, models]) => ({
+    brand,
+    brandSlug: models[0].brandSlug,
+    modelCount: models.length,
+    matchCount: models.reduce((sum, m) => sum + m.records.length, 0),
+  }))
+  .sort((a, b) => b.matchCount - a.matchCount);
+---
+
+<Base
+  title="Equipment directory"
+  description="Browse AHRI-certified A2L equipment matches by brand and outdoor unit model."
+>
+  <h1>Equipment directory</h1>
+  <p>
+    AHRI-certified indoor/outdoor equipment matches, organized by brand and outdoor
+    unit model. Know your model number already?
+    <a href="/equipment-matching/">Search or browse interactively →</a>
+  </p>
+
+  <div class="path-grid">
+    {
+      brandSummaries.map((b) => (
+        <a class="path-card" href={`/equipment/${b.brandSlug}/`}>
+          <h2>{b.brand}</h2>
+          <p>
+            {b.modelCount.toLocaleString()} outdoor unit model{b.modelCount === 1 ? "" : "s"},{" "}
+            {b.matchCount.toLocaleString()} certified match{b.matchCount === 1 ? "" : "es"}
+          </p>
+          <span class="path-cta">Browse {b.brand} models →</span>
+        </a>
+      ))
+    }
+  </div>
+</Base>

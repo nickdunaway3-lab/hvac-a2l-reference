@@ -1,0 +1,107 @@
+---
+import Base from "../../layouts/Base.astro";
+---
+
+<Base
+  title="Methodology"
+  description="How this site sources, verifies, and flags every value it publishes — and what 'verified' vs. 'unconfirmed' actually means."
+>
+  <h1>Methodology</h1>
+  <p>
+    This is a reference database, not a blog. Every value on the site — every AHRI number,
+    every part number, every spec — is either traceable to a source we actually retrieved, or
+    it isn't published at all. This page explains exactly what that means; the per-row source
+    links and confidence badges throughout the site are where that promise gets kept, not just
+    stated.
+  </p>
+
+  <h2>The rule</h2>
+  <p>
+    We never generate, infer, interpolate, or guess a spec value. Not one. If an AHRI match, a
+    part number, or a code requirement isn't traceable to a real source we retrieved, it does
+    not go on the site — including values that would be easy to assume from general knowledge
+    (a brand's typical refrigerant, a plausible-looking model number, a "usually true" spec).
+    Several examples of this rule in practice, not as a hypothetical:
+  </p>
+  <ul>
+    <li>
+      Refrigerant type is left blank rather than inferred from the brand, unless a specific
+      source states it for that specific model.
+    </li>
+    <li>
+      When a source document contained an ambiguous or incomplete row — a missing reference
+      number, a duplicate that shouldn't exist, a likely typo — the ambiguous data was either
+      excluded or flagged with an explanatory note, never silently corrected or guessed at.
+    </li>
+    <li>
+      The parts catalog lists official manufacturer part numbers only. There's no public data
+      on which parts fail most often by model, so the site doesn't claim to know that.
+    </li>
+  </ul>
+
+  <h2>Every record carries four fields</h2>
+  <dl class="glossary-list">
+    <dt>Source URL</dt>
+    <dd>Exactly where the value came from. Required — the build fails if it's missing.</dd>
+    <dt>Source type</dt>
+    <dd>
+      Whether it's a manufacturer's own document, a distributor's compiled chart, a government
+      rule, or another category. This distinction matters: a distributor's compiled chart isn't
+      the same evidentiary weight as the manufacturer's own document, even when both look like
+      "a PDF with a table in it."
+    </dd>
+    <dt>Retrieved date</dt>
+    <dd>When we actually pulled the value, so you can judge how current it is.</dd>
+    <dt>Confidence</dt>
+    <dd>
+      <strong>Verified</strong> means the source is a primary document (the manufacturer's own
+      publication, or independently cross-checked) and we're confident in the transcription.{" "}
+      <strong>Unconfirmed</strong> doesn't mean a value is wrong — it means we haven't
+      independently cross-checked it against a second, ideally primary, source yet. We'd rather
+      flag something as unconfirmed than present a guess as settled fact.
+    </dd>
+  </dl>
+
+  <h2>What "AHRI match" means</h2>
+  <p>
+    AHRI (the Air-Conditioning, Heating, and Refrigeration Institute) independently tests and
+    certifies that a specific outdoor unit, indoor coil, and furnace combination performs
+    together the way the manufacturer claims. An AHRI reference number is proof that
+    combination was actually tested, not just asserted by a spec sheet. It does not mean the
+    price you were quoted for it is fair, or that the refrigerant or extras on your quote are
+    necessary — that's a separate question, and it's what {" "}
+    <a href="/get-your-quote-reviewed/">quote review</a> is for.
+  </p>
+
+  <h2>Why we don't scrape the AHRI Directory</h2>
+  <p>
+    The AHRI Directory of Certified Product Performance's own terms of use prohibit downloading,
+    entering its data into a database, or republishing it outside individual, non-commercial,
+    personal reference. So this site doesn't. Equipment-matching data instead comes from
+    manufacturers' own published match-up documents (or, where flagged, a distributor's compiled
+    chart), with the AHRI reference number cited as a pointer and a link to AHRI's own public
+    search so you can verify it yourself — which is exactly the kind of individual,
+    non-commercial use their terms permit.
+  </p>
+
+  <h2>Current data</h2>
+  <p>
+    As of this page's last update: equipment-matching data covers Goodman, Daikin, and Lennox
+    (Lennox from their own official AHRI system-match bulletin; Goodman/Daikin from a
+    distributor-compiled chart, flagged unconfirmed accordingly). The parts catalog covers one
+    Goodman model family (GSXN4) from their official repair-parts manual. Coverage is expanding
+    incrementally — each new brand or content area gets the same sourcing discipline described
+    above, not a shortcut.
+  </p>
+</Base>
+
+<style>
+  .glossary-list dt {
+    font-weight: 700;
+    margin-top: 1rem;
+  }
+  .glossary-list dd {
+    margin: 0.25rem 0 0;
+    color: var(--muted);
+  }
+</style>

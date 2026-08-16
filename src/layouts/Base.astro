@@ -282,13 +282,16 @@ const { title, description, hasAffiliateLinks = false } = Astro.props;
         margin: 0 0 1.5rem;
       }
       .model-chip {
+        display: inline-block;
         border: 1px solid var(--line);
         background: var(--bg);
+        color: var(--ink);
         padding: 0.35rem 0.7rem;
         border-radius: 0.4rem;
         font: inherit;
         font-size: 0.83rem;
         font-family: ui-monospace, "SF Mono", Consolas, monospace;
+        text-decoration: none;
         cursor: pointer;
       }
       .model-chip:hover { border-color: var(--link); color: var(--link); }
@@ -353,7 +356,7 @@ const { title, description, hasAffiliateLinks = false } = Astro.props;
     <header>
       <a href="/">A2L Refrigerant Reference</a>
       <nav>
-        <a href="/equipment-matching/">Look up equipment</a>
+        <a href="/equipment/">Look up equipment</a>
         <a href="/get-your-quote-reviewed/">Get your quote reviewed</a>
       </nav>
     </header>
@@ -362,9 +365,7 @@ const { title, description, hasAffiliateLinks = false } = Astro.props;
       <slot />
     </main>
     <footer>
-      Every value on this site carries a source, a retrieval date, and a confidence
-      level. Rows marked "unconfirmed" are not facts yet — verify with the
-      manufacturer or AHRI before relying on them.
+      <a href="/methodology/">How this site sources and verifies data</a>
     </footer>
   </body>
 </html>

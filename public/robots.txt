@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hvac-a2l-reference.pages.dev/sitemap-index.xml
