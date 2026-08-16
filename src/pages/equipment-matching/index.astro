@@ -1,18 +1,6 @@
 ---
-import { getCollection } from "astro:content";
 import Base from "../../layouts/Base.astro";
 import ConfidenceExplainer from "../../components/ConfidenceExplainer.astro";
-
-// Only used for the brand chip counts shown before any search -- cheap
-// aggregate, not a full row dump into the page's HTML. Actual row data is
-// fetched client-side from /data/equipment-matches.json (see that file's
-// comment for why: this collection is ~8,700 records as of the Lennox
-// batch, too many to render into the page at build time.)
-const matches = await getCollection("equipmentMatches");
-const brandCounts = [...Map.groupBy(matches, (m) => m.data.brand).entries()]
-  .map(([brand, rows]) => ({ brand, count: rows.length }))
-  .sort((a, b) => b.count - a.count);
-const total = matches.length;
 ---
 
 <Base
@@ -20,41 +8,52 @@ const total = matches.length;
   description="AHRI-certified indoor/outdoor equipment matchups for A2L refrigerant systems, sourced and dated."
 >
   <h1>Equipment matching</h1>
-  <p>
-    An "AHRI match" means AHRI (the industry certification body) has independently
-    tested and verified that a specific outdoor unit, indoor coil, and furnace
-    perform together the way the manufacturer claims. If your quote lists an
-    outdoor/indoor pairing that <em>isn't</em> AHRI-matched, that's worth asking
-    your contractor about — it can affect efficiency ratings, warranty coverage,
-    and rebate eligibility.
+  <p class="note" style="margin-bottom: 1.25rem;">
+    Search a model number from your quote, or browse by brand if you don't have one handy.
   </p>
 
-  <ConfidenceExplainer />
+  <div class="tabs" role="tablist">
+    <button class="tab-button" role="tab" id="tab-search" aria-controls="panel-search" aria-selected="true" data-tab="search">
+      Search by model
+    </button>
+    <button class="tab-button" role="tab" id="tab-browse" aria-controls="panel-browse" aria-selected="false" data-tab="browse">
+      Browse by brand
+    </button>
+  </div>
 
-  <p class="callout">
-    <strong>{total.toLocaleString()} matches</strong> across
-    {brandCounts.map((b, i) => (
-      <>
-        {i > 0 && ", "}
-        {b.brand} ({b.count.toLocaleString()})
-      </>
-    ))}
-    . Too many to list at once — search by model number below.
-  </p>
+  <div class="tab-panel" id="panel-search" role="tabpanel" aria-labelledby="tab-search">
+    <div class="search-shell">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="7" cy="7" r="5.25" stroke="currentColor" stroke-width="1.5" />
+        <path d="M11 11L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+      </svg>
+      <input
+        type="search"
+        id="table-search"
+        class="table-search"
+        placeholder="e.g. GSXN401810 or ML13KC1-060-230A"
+        aria-label="Search equipment matches by model number"
+      />
+    </div>
+    <p id="search-status" class="note">Type at least 3 characters of a model number to search.</p>
+  </div>
 
-  <input
-    type="search"
-    id="table-search"
-    class="table-search"
-    placeholder="Search by model number (e.g. GSXN401810 or ML13KC1-060-230A)…"
-    aria-label="Search equipment matches by model number"
-  />
-
-  <p id="search-status" class="note" role="status" aria-live="polite">
-    Type at least 3 characters of a model number to search.
-  </p>
+  <div class="tab-panel" id="panel-browse" role="tabpanel" aria-labelledby="tab-browse" hidden>
+    <p class="note">Pick a brand, then an outdoor unit, to see its matched indoor equipment.</p>
+    <div class="chip-row" id="brand-chips"></div>
+    <div class="model-list" id="model-list"></div>
+  </div>
 
   <div id="results"></div>
+
+  <p class="callout">
+    <strong>What "AHRI match" and the source links mean:</strong> AHRI (the industry
+    certification body) independently verifies that a specific outdoor unit, indoor
+    coil, and furnace perform together the way the manufacturer claims — that's what
+    being listed here confirms. Every row links to exactly where its data came from
+    and when we retrieved it, so you (or your contractor) can double-check it
+    yourself.
+  </p>
 
   <div class="cta-box">
     <p>
@@ -65,6 +64,8 @@ const total = matches.length;
     </p>
     <a class="button" href="/get-your-quote-reviewed/">Get your quote reviewed</a>
   </div>
+
+  <ConfidenceExplainer />
 </Base>
 
 <script>
@@ -91,6 +92,8 @@ const total = matches.length;
   const searchInput = document.getElementById("table-search") as HTMLInputElement;
   const statusEl = document.getElementById("search-status")!;
   const resultsEl = document.getElementById("results")!;
+  const brandChipsEl = document.getElementById("brand-chips")!;
+  const modelListEl = document.getElementById("model-list")!;
   const MIN_QUERY_LENGTH = 3;
   const MAX_RESULTS = 200;
 
@@ -99,15 +102,20 @@ const total = matches.length;
     dataPromise ??= fetch("/data/equipment-matches.json").then((r) => r.json());
     return dataPromise;
   }
+  // Warm the cache in the background so switching to Browse feels instant.
+  loadData();
 
   function escapeHtml(s: string) {
-    return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+    return s.replace(
+      /[&<>"']/g,
+      (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+    );
   }
 
   function renderRow(r: MatchRecord) {
+    const retrievedLabel = r.retrieved_at.slice(0, 10);
     const badgeClass = r.confidence === "verified" ? "verified" : "needs_review";
     const badgeLabel = r.confidence === "verified" ? "Verified" : "Unconfirmed — check before relying on this";
-    const retrievedLabel = r.retrieved_at.slice(0, 10);
     return `
       <tr>
         <td>${escapeHtml(r.brand)}</td>
@@ -116,24 +124,51 @@ const total = matches.length;
         <td>${r.furnace_model ? escapeHtml(r.furnace_model) : "—"}</td>
         <td>${r.seer2 ?? r.seer ?? "—"}</td>
         <td>${r.region ?? "—"}</td>
-        <td>${r.ahri_reference_number}</td>
         <td>
-          <span class="badge ${badgeClass}">${badgeLabel}</span>
-          ${r.notes ? `<p class="note">${escapeHtml(r.notes)}</p>` : ""}
-          <p class="source-links">
-            <a href="${r.source_url}" target="_blank" rel="noopener noreferrer">Source</a>
-            · retrieved ${retrievedLabel}
-            ·
-            <a href="https://www.ahridirectory.org/" target="_blank" rel="noopener noreferrer">
-              Verify AHRI #${r.ahri_reference_number} on ahridirectory.org
-            </a>
-            (search by "AHRI Reference #")
-          </p>
+          <details class="row-details">
+            <summary>${r.ahri_reference_number}</summary>
+            <div class="row-details-content">
+              <span class="badge ${badgeClass}">${badgeLabel}</span>
+              ${r.notes ? `<p class="note">${escapeHtml(r.notes)}</p>` : ""}
+              <p class="source-links">
+                <a href="${r.source_url}" target="_blank" rel="noopener noreferrer">Source</a>
+                · retrieved ${retrievedLabel}
+                ·
+                <a href="https://www.ahridirectory.org/" target="_blank" rel="noopener noreferrer">
+                  Verify on ahridirectory.org
+                </a>
+                (search by "AHRI Reference #")
+              </p>
+            </div>
+          </details>
         </td>
       </tr>
     `;
   }
 
+  function renderResults(matches: MatchRecord[], emptyMessage: string) {
+    const shown = matches.slice(0, MAX_RESULTS);
+    statusEl.textContent =
+      matches.length === 0
+        ? emptyMessage
+        : matches.length > MAX_RESULTS
+          ? `Showing first ${MAX_RESULTS} of ${matches.length.toLocaleString()} matches — refine your search to narrow it down.`
+          : `${matches.length.toLocaleString()} match${matches.length === 1 ? "" : "es"}.`;
+
+    resultsEl.innerHTML = shown.length
+      ? `<table>
+          <thead>
+            <tr>
+              <th>Brand</th><th>Outdoor unit</th><th>Indoor coil</th><th>Furnace</th>
+              <th>SEER / SEER2</th><th>Region</th><th>AHRI #</th>
+            </tr>
+          </thead>
+          <tbody>${shown.map(renderRow).join("")}</tbody>
+        </table>`
+      : "";
+  }
+
+  // --- Search tab ---
   async function runSearch() {
     const query = searchInput.value.trim().toLowerCase();
     if (query.length < MIN_QUERY_LENGTH) {
@@ -141,7 +176,6 @@ const total = matches.length;
       resultsEl.innerHTML = "";
       return;
     }
-
     statusEl.textContent = "Searching…";
     const data = await loadData();
     const matches = data.filter(
@@ -151,29 +185,73 @@ const total = matches.length;
         (r.furnace_model?.toLowerCase().includes(query) ?? false) ||
         r.ahri_reference_number.includes(query),
     );
-
-    const shown = matches.slice(0, MAX_RESULTS);
-    statusEl.textContent =
-      matches.length > MAX_RESULTS
-        ? `Showing first ${MAX_RESULTS} of ${matches.length.toLocaleString()} matches — refine your search to narrow it down.`
-        : `${matches.length.toLocaleString()} match${matches.length === 1 ? "" : "es"}.`;
-
-    resultsEl.innerHTML = shown.length
-      ? `<table>
-          <thead>
-            <tr>
-              <th>Brand</th><th>Outdoor unit</th><th>Indoor coil</th><th>Furnace</th>
-              <th>SEER / SEER2</th><th>Region</th><th>AHRI #</th><th>Provenance</th>
-            </tr>
-          </thead>
-          <tbody>${shown.map(renderRow).join("")}</tbody>
-        </table>`
-      : "";
+    renderResults(matches, "No matches for that search.");
   }
-
   let debounceTimer: ReturnType<typeof setTimeout>;
   searchInput.addEventListener("input", () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(runSearch, 150);
+  });
+
+  // --- Browse tab ---
+  let browseInitialized = false;
+  let selectedBrand: string | null = null;
+
+  async function initBrowse() {
+    if (browseInitialized) return;
+    browseInitialized = true;
+    const data = await loadData();
+    const brandCounts = new Map<string, number>();
+    for (const r of data) brandCounts.set(r.brand, (brandCounts.get(r.brand) ?? 0) + 1);
+
+    brandChipsEl.innerHTML = [...brandCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(
+        ([brand, count]) =>
+          `<button class="chip" data-brand="${escapeHtml(brand)}" aria-pressed="false">${escapeHtml(brand)} (${count.toLocaleString()})</button>`,
+      )
+      .join("");
+
+    brandChipsEl.querySelectorAll<HTMLButtonElement>(".chip").forEach((chip) => {
+      chip.addEventListener("click", async () => {
+        brandChipsEl.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
+        chip.setAttribute("aria-pressed", "true");
+        selectedBrand = chip.dataset.brand!;
+        resultsEl.innerHTML = "";
+        statusEl.textContent = "";
+
+        const models = [...new Set(data.filter((r) => r.brand === selectedBrand).map((r) => r.outdoor_model))].sort();
+        modelListEl.innerHTML = models
+          .map((m) => `<button class="model-chip" data-model="${escapeHtml(m)}" aria-pressed="false">${escapeHtml(m)}</button>`)
+          .join("");
+
+        modelListEl.querySelectorAll<HTMLButtonElement>(".model-chip").forEach((modelChip) => {
+          modelChip.addEventListener("click", () => {
+            modelListEl.querySelectorAll(".model-chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
+            modelChip.setAttribute("aria-pressed", "true");
+            const model = modelChip.dataset.model!;
+            const matches = data.filter((r) => r.brand === selectedBrand && r.outdoor_model === model);
+            renderResults(matches, "No matches found.");
+          });
+        });
+      });
+    });
+  }
+
+  const tabButtons = document.querySelectorAll<HTMLButtonElement>(".tab-button");
+  const panels: Record<string, HTMLElement> = {
+    search: document.getElementById("panel-search")!,
+    browse: document.getElementById("panel-browse")!,
+  };
+  tabButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      tabButtons.forEach((b) => b.setAttribute("aria-selected", "false"));
+      btn.setAttribute("aria-selected", "true");
+      const target = btn.dataset.tab!;
+      for (const [key, panel] of Object.entries(panels)) panel.hidden = key !== target;
+      resultsEl.innerHTML = "";
+      statusEl.textContent = target === "search" ? `Type at least ${MIN_QUERY_LENGTH} characters of a model number to search.` : "";
+      if (target === "browse") initBrowse();
+    });
   });
 </script>

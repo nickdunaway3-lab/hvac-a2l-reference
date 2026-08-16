@@ -222,6 +222,56 @@ at all for this pass — only presentation did.
   the site is open, submit the form once and confirm a row lands in the
   "Leads" sheet.
 
+## Second usability pass: search-first, browse tab, real visual design (2026-08-16)
+
+Follow-up request: remove the "Unconfirmed" wording from default view, put
+search at the top of the page instead of after paragraphs of explanation,
+add a way to browse without knowing a model number, and make it look
+genuinely good, not just functional.
+
+One request needed pushback before building: removing "Unconfirmed"
+entirely would mean presenting unverified data the same as verified data —
+the literal opposite of the brief's core rule. Proposed a real fix instead
+and confirmed it before building: keep the distinction, but move it out of
+the default row view into a per-row `<details>` disclosure (the AHRI number
+itself becomes the toggle) — not hidden, just not shouting. Chosen over two
+other options (hide badges only on verified rows; restyle both smaller).
+
+- Equipment-matching page rebuilt: tabs ("Search by model" / "Browse by
+  brand") immediately below the H1, search box first thing in the Search
+  tab. Browse tab: brand chips (with counts) → clicking one lists its
+  distinct outdoor models (130 for Lennox, 7 each for Goodman/Daikin — small
+  enough for a flat chip list, checked before building it that way) →
+  clicking a model shows its matches, reusing the same row renderer as
+  search. Confidence/source/notes moved into a `<details>` per row, closed
+  by default.
+- Real visual pass on `Base.astro`'s shared styles: pill-style tabs, chip
+  buttons, card-based path grid, sticky/blurred header, a proper focus ring
+  on the search input, consistent border-radius and shadow tokens instead
+  of ad hoc values.
+
+**Caught a real bug by actually looking, not by assuming the CSS worked:**
+screenshotted the page (Playwright + a throwaway `scripts/screenshot.mjs`,
+removed after use) before shipping and found every custom style silently
+not applying — plain buttons, default underlined blue links, no cards, no
+tabs styling. Cause: Astro scopes `<style>` blocks to the file they're
+written in; `Base.astro`'s styles were never reaching content rendered
+through `<slot />` from page files, because slotted content doesn't inherit
+the parent layout's scope attribute. One-line fix: `<style is:global>` on
+`Base.astro`'s style block. Re-screenshotted after the fix and confirmed
+the actual rendered design — cards, working tabs, chip lists, no console
+errors — before deploying. This is exactly the kind of thing that looks
+fine in the source and is completely broken on screen; worth remembering
+for any future layout work in this codebase.
+- Verified in the dev screenshots, not just asserted: homepage path cards,
+  equipment-matching search results (Search tab, "GSXN401810" query, 2
+  correct results), Browse tab with Lennox selected showing its 130-model
+  chip list, and the quote-review form's layout (Turnstile itself showed a
+  "can't connect" state in the screenshot tool's headless/localhost
+  environment — a known dev-only quirk, not evidence of a production
+  problem, since the live site had already been confirmed rendering the
+  widget correctly with real values in an earlier check).
+
 ## Expanding coverage + fixing "it's all just sourcing, no content" (2026-08-16)
 
 Feedback after the usability pass: the equipment-matching page felt thin —
