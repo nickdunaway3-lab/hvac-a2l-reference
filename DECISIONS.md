@@ -181,9 +181,14 @@ Newest entries at the bottom.
   aren't set — verified this actually happens (checked the built HTML output
   directly) rather than assuming the conditional works. Same rule as
   `AffiliateLink`: never ship something that looks live but isn't.
-- First real page using it: `/get-your-quote-reviewed/`. Not yet wired to a
-  live Turnstile widget or a deployed Apps Script — both need the manual
-  browser steps described above, still pending.
+- First real page using it: `/get-your-quote-reviewed/`. Turnstile widget
+  and Apps Script Web App are both live as of 2026-08-16 — confirmed by
+  checking the deployed HTML directly (real `data-sitekey` and
+  `data-endpoint` present, fallback message gone), not just "should work."
+  Not yet end-to-end tested with an actual form submission (Turnstile
+  requires a real browser challenge, which can't be scripted) — next time
+  the site is open, submit the form once and confirm a row lands in the
+  "Leads" sheet.
 
 ## Deployment (2026-08-16)
 
