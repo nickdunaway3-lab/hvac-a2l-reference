@@ -76,6 +76,16 @@ const { title, description, hasAffiliateLinks = false } = Astro.props;
       }
       .source-links { font-size: 0.82rem; margin-top: 0.25rem; }
       .source-links a { color: var(--link); }
+      .callout {
+        background: var(--bg-subtle);
+        border: 1px solid var(--line);
+        border-radius: 0.4rem;
+        padding: 0.8rem 1rem;
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin: 0 0 1.5rem;
+      }
+      .callout strong { color: var(--ink); }
       .affiliate-disclosure {
         background: var(--bg-subtle);
         border: 1px solid var(--line);
@@ -86,13 +96,65 @@ const { title, description, hasAffiliateLinks = false } = Astro.props;
         margin: 0 0 1.5rem;
       }
       .affiliate-link { color: var(--link); }
+
+      .path-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        margin: 1.75rem 0;
+      }
+      @media (max-width: 40rem) {
+        .path-grid { grid-template-columns: 1fr; }
+      }
+      .path-card {
+        display: block;
+        border: 1px solid var(--line);
+        border-radius: 0.6rem;
+        padding: 1.25rem;
+        text-decoration: none;
+        color: var(--ink);
+        transition: border-color 0.15s ease;
+      }
+      .path-card:hover { border-color: var(--link); }
+      .path-card h2 { margin: 0 0 0.4rem; font-size: 1.15rem; }
+      .path-card p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+      .path-card .path-cta { color: var(--link); font-weight: 600; font-size: 0.88rem; display: inline-block; margin-top: 0.6rem; }
+
+      .cta-box {
+        border: 1px solid var(--link);
+        background: var(--bg-subtle);
+        border-radius: 0.5rem;
+        padding: 1rem 1.25rem;
+        margin: 1.75rem 0;
+      }
+      .cta-box p { margin: 0 0 0.6rem; }
+      .cta-box a.button {
+        display: inline-block;
+        background: var(--link);
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: 0.35rem;
+        font-size: 0.9rem;
+      }
+
+      .table-search {
+        width: 100%;
+        max-width: 24rem;
+        padding: 0.5rem 0.7rem;
+        border: 1px solid var(--line);
+        border-radius: 0.35rem;
+        font: inherit;
+        margin-bottom: 1rem;
+      }
     </style>
   </head>
   <body>
     <header>
       <a href="/">A2L Refrigerant Reference</a>
       <nav>
-        <a href="/equipment-matching/">Equipment matching</a>
+        <a href="/equipment-matching/">Look up equipment</a>
         <a href="/get-your-quote-reviewed/">Get your quote reviewed</a>
       </nav>
     </header>

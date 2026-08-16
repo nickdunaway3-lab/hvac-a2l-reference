@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import Base from "../../layouts/Base.astro";
 import ProvenanceBadge from "../../components/ProvenanceBadge.astro";
+import ConfidenceExplainer from "../../components/ConfidenceExplainer.astro";
 
 const matches = await getCollection("equipmentMatches");
 const byBrand = Map.groupBy(matches, (m) => m.data.brand);
@@ -13,15 +14,27 @@ const byBrand = Map.groupBy(matches, (m) => m.data.brand);
 >
   <h1>Equipment matching</h1>
   <p>
-    Every row below is traceable to a source document — see the link and retrieval
-    date under each match. Rows marked <strong>unconfirmed</strong> have not been
-    independently cross-checked against AHRI's own certificate lookup or the
-    manufacturer's primary documentation yet, and should not be treated as fact.
+    An "AHRI match" means AHRI (the industry certification body) has independently
+    tested and verified that a specific outdoor unit, indoor coil, and furnace
+    perform together the way the manufacturer claims. If your quote lists an
+    outdoor/indoor pairing that <em>isn't</em> AHRI-matched, that's worth asking
+    your contractor about — it can affect efficiency ratings, warranty coverage,
+    and rebate eligibility.
   </p>
+
+  <ConfidenceExplainer />
+
+  <input
+    type="search"
+    id="table-search"
+    class="table-search"
+    placeholder="Search by model number (e.g. GSXN401810)…"
+    aria-label="Search equipment matches by model number"
+  />
 
   {
     [...byBrand.entries()].map(([brand, rows]) => (
-      <section>
+      <section class="brand-section">
         <h2>{brand}</h2>
         <table>
           <thead>
@@ -63,4 +76,36 @@ const byBrand = Map.groupBy(matches, (m) => m.data.brand);
       </section>
     ))
   }
+
+  <div class="cta-box">
+    <p>
+      <strong>Found your equipment above but still not sure what your quote means?</strong>
+      An AHRI match confirms the equipment is certified to work together — it doesn't
+      tell you whether the price, the refrigerant, or the extras (like a leak
+      detection system) on your specific quote are reasonable.
+    </p>
+    <a class="button" href="/get-your-quote-reviewed/">Get your quote reviewed</a>
+  </div>
 </Base>
+
+<script>
+  const searchInput = document.getElementById("table-search") as HTMLInputElement | null;
+  const sections = document.querySelectorAll<HTMLElement>(".brand-section");
+
+  searchInput?.addEventListener("input", () => {
+    const query = searchInput.value.trim().toLowerCase();
+
+    sections.forEach((section) => {
+      const rows = section.querySelectorAll<HTMLTableRowElement>("tbody tr");
+      let visibleCount = 0;
+
+      rows.forEach((row) => {
+        const matchesQuery = !query || row.textContent!.toLowerCase().includes(query);
+        row.style.display = matchesQuery ? "" : "none";
+        if (matchesQuery) visibleCount++;
+      });
+
+      section.style.display = visibleCount > 0 ? "" : "none";
+    });
+  });
+</script>

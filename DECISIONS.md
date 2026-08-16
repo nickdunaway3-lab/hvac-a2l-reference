@@ -158,6 +158,38 @@ Newest entries at the bottom.
   content like leak-detection sensors or line-set flush kits exists, and
   once real affiliate tags exist to configure.
 
+## First real usability pass (2026-08-16)
+
+User feedback after the site was live and functional: "not user friendly, I
+don't know how to use it." Confirmed four specific gaps, not a vague
+complaint:
+
+- Homepage was a title and one paragraph — no orientation for either
+  audience (homeowner vs. technician), no clear next step.
+- Equipment-matching table was raw model numbers and AHRI reference numbers
+  with zero explanation of what an "AHRI match" is or why it matters to
+  someone comparing a quote.
+- Every pilot row shows "Unconfirmed" (correctly, per the provenance
+  design), but with no framing that reads as "this site is broken," not "the
+  site is being honest about what it hasn't verified yet."
+- The lead-capture CTA only existed as a small nav link — nothing on the
+  data page itself pointed there, even though "found your equipment, still
+  confused about the quote" is exactly the moment that page should hand off.
+
+Fixes: homepage now splits into two explicit path cards (homeowner /
+technician) instead of one generic paragraph; added `<ConfidenceExplainer>`
+(reusable — will get dropped onto every future data page, not just this
+one) explaining the verified/needs_review system *before* a visitor hits a
+wall of badges; added a CTA box at the bottom of the equipment table
+pointing to the quote-review page; added client-side search/filter on the
+equipment table (plain JS, no dependency — matters more as the dataset
+grows past one pilot batch). Verified all of this landed in the actual
+built HTML, not just written and assumed.
+
+This is a good example of why "prove the pipeline first, polish later" was
+the right sequencing: the underlying data/schema work didn't need to change
+at all for this pass — only presentation did.
+
 ## Lead capture (2026-08-16)
 
 - Built as designed earlier: Cloudflare Turnstile (client) → Google Apps
