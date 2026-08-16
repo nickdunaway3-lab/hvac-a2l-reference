@@ -72,6 +72,19 @@ for (const rawLine of lines) {
   const modelNo = cols[0];
   const coilOrAirHandler = cols[1];
 
+  // The PDF's column gaps aren't uniformly >=2 spaces for every row -- for
+  // some (long outdoor model + long coil name) combinations the gap
+  // collapses to a single space, and the split above leaves the coil name
+  // (or a stray "+" marker) glommed onto the end of modelNo instead of
+  // becoming its own column. There's no single reliable rule for where to
+  // cut that string back apart (checked: the trailing token is sometimes a
+  // real coil model, sometimes just "+", no consistent prefix pattern
+  // covers both), so rather than guess, these rows are excluded entirely.
+  if (/\s/.test(modelNo)) {
+    skip("outdoor model token contains embedded whitespace (column-spacing collapse in source PDF, not safely splittable)");
+    continue;
+  }
+
   const refrigIndex = cols.findIndex((c) => /^R-\d{2,4}[A-Z]?$/.test(c));
   if (refrigIndex === -1) {
     skip("no recognizable refrigerant token (R-###[letter])");
