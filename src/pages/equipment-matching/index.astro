@@ -1,0 +1,66 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import ProvenanceBadge from "../../components/ProvenanceBadge.astro";
+
+const matches = await getCollection("equipmentMatches");
+const byBrand = Map.groupBy(matches, (m) => m.data.brand);
+---
+
+<Base
+  title="Equipment matching"
+  description="AHRI-certified indoor/outdoor equipment matchups for A2L refrigerant systems, sourced and dated."
+>
+  <h1>Equipment matching</h1>
+  <p>
+    Every row below is traceable to a source document — see the link and retrieval
+    date under each match. Rows marked <strong>unconfirmed</strong> have not been
+    independently cross-checked against AHRI's own certificate lookup or the
+    manufacturer's primary documentation yet, and should not be treated as fact.
+  </p>
+
+  {
+    [...byBrand.entries()].map(([brand, rows]) => (
+      <section>
+        <h2>{brand}</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Outdoor unit</th>
+              <th>Indoor coil</th>
+              <th>Furnace</th>
+              <th>AHRI #</th>
+              <th>SEER / SEER2</th>
+              <th>Provenance</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr>
+                <td>{row.data.outdoor_model}</td>
+                <td>
+                  {row.data.indoor_model}
+                  {row.data.coil_orientation && (
+                    <div class="note">{row.data.coil_orientation}</div>
+                  )}
+                </td>
+                <td>{row.data.furnace_model ?? "—"}</td>
+                <td>{row.data.ahri_reference_number}</td>
+                <td>{row.data.seer2 ?? row.data.seer ?? "—"}</td>
+                <td>
+                  <ProvenanceBadge
+                    confidence={row.data.confidence}
+                    sourceUrl={row.data.source_url}
+                    retrievedAt={row.data.retrieved_at}
+                    notes={row.data.notes}
+                    ahriReferenceNumber={row.data.ahri_reference_number}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+    ))
+  }
+</Base>

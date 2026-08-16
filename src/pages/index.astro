@@ -1,17 +1,18 @@
 ---
-
+import Base from "../layouts/Base.astro";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Base
+  title="Home"
+  description="A structured, sourced reference for the HVAC A2L refrigerant transition (R-410A to R-454B/R-32): equipment matching, line set reuse, leak detection, code adoption, and refrigerant availability."
+>
+  <h1>The A2L refrigerant transition, sourced</h1>
+  <p>
+    Equipment matching, line set reuse, leak detection requirements, code adoption
+    status, and R-410A availability — every value traceable to a source, dated, and
+    flagged when unconfirmed. Nothing here is inferred or guessed.
+  </p>
+  <ul>
+    <li><a href="/equipment-matching/">Equipment matching</a> — AHRI-certified indoor/outdoor pairings</li>
+  </ul>
+</Base>

@@ -1,0 +1,135 @@
+# Ingestion batch: Daikin Fit "DX17VSS Matchup 80%" outdoor-unit matchups,
+# transcribed verbatim from the same distributor-hosted quick-reference PDF
+# as the Goodman GSXN4 batch (page 3 of the source document). Same caveats
+# apply: distributor-compiled, not primary, everything needs_review.
+#
+# Two rows below are flagged, not silently corrected, per the site's rule
+# against ever inferring/guessing a spec value:
+#
+#   1. DX17VSS301's horizontal-coil (CHPE3636B4) variant has NO second AHRI
+#      reference number in the source at all — only one AHRI number is given
+#      for two listed coil options. We only record the variant we have a real
+#      number for (the upflow one) and skip the other rather than guess it.
+#   2. DX17VSS361's upflow-coil row lists AHRI reference number 202334814 —
+#      identical to the number three rows up for DX17VSS301. AHRI reference
+#      numbers are 1:1 with a specific matched combination, so a repeat
+#      across two different outdoor models is almost certainly a
+#      transcription error in the source PDF, not a real shared certificate.
+#      Recorded as-is, flagged needs_review with a note, not corrected.
+document:
+  source_url: "https://www.supplyhouse.com/product_files/Goodman-CHPTA2426B4-Quick-Reference-Guide.pdf"
+  source_type: distributor_compiled_reference
+  retrieved_at: 2026-08-16
+  brand: Daikin
+  confidence: needs_review
+
+records:
+  - outdoor_model: DX17VSS181
+    indoor_model: CAPEA1818B4
+    coil_orientation: upflow
+    furnace_model: DM80VC0603BN
+    ahri_reference_number: "202333995"
+    seer: 18
+
+  - outdoor_model: DX17VSS181
+    indoor_model: CHPE2430B4
+    coil_orientation: horizontal
+    furnace_model: DM80VC0603BN
+    ahri_reference_number: "202333994"
+    seer: 18
+
+  - outdoor_model: DX17VSS241
+    indoor_model: CAPEA2422B4
+    coil_orientation: upflow
+    furnace_model: DM80VC0603BN
+    ahri_reference_number: "202334035"
+    seer: 17
+
+  - outdoor_model: DX17VSS241
+    indoor_model: CHPE3636B4
+    coil_orientation: horizontal
+    furnace_model: DM80VC0603BN
+    ahri_reference_number: "202334036"
+    seer: 17
+
+  - outdoor_model: DX17VSS301
+    indoor_model: CAPEA2422B4
+    coil_orientation: upflow
+    furnace_model: DM80VC0603BN
+    ahri_reference_number: "202334814"
+    seer: 18
+    notes: >
+      Source lists a second coil option (horizontal, CHPE3636B4) for this
+      outdoor unit but gives only one AHRI reference number total. No record
+      was created for the horizontal variant — its AHRI number is unknown,
+      not guessed. Needs direct AHRI lookup or the manufacturer's own
+      documentation before that pairing can be published at all.
+
+  - outdoor_model: DX17VSS361
+    indoor_model: CAPEA3026B4
+    coil_orientation: upflow
+    furnace_model: DM80VC0603BN
+    ahri_reference_number: "202334814"
+    seer: 16.5
+    notes: >
+      This AHRI reference number is identical to the one recorded for
+      DX17VSS301 above, in the same source document. AHRI reference numbers
+      should be unique per matched combination, so this is almost certainly
+      a transcription error in the source PDF. Recorded verbatim as printed;
+      do not treat as verified or publish without confirming the real number
+      via AHRI's public certificate lookup.
+
+  - outdoor_model: DX17VSS361
+    indoor_model: CHPE3636B4
+    coil_orientation: horizontal
+    furnace_model: DM80VC0603BN
+    ahri_reference_number: "203576026"
+    seer: 16.5
+
+  - outdoor_model: DX17VSS421
+    indoor_model: CAAPE4860C4
+    coil_orientation: upflow
+    furnace_model: DM80VC0804CN
+    ahri_reference_number: "202357141"
+    seer: 17
+    notes: >
+      Indoor model printed as "CAAPE4860C4" in the source (double A). Every
+      other row in this document uses the pattern "CAPE####C4" for this coil
+      family (see DX17VSS481/601 below), so this is likely a typo for
+      CAPE4860C4 — but recorded exactly as printed rather than silently
+      corrected. Confirm the real model number before publishing.
+
+  - outdoor_model: DX17VSS421
+    indoor_model: CHPE3743C4
+    coil_orientation: horizontal
+    furnace_model: DM80VC0804CN
+    ahri_reference_number: "202357142"
+    seer: 17
+
+  - outdoor_model: DX17VSS481
+    indoor_model: CAPE4860C4
+    coil_orientation: upflow
+    furnace_model: DM80VC0804CN
+    ahri_reference_number: "202357171"
+    seer: 16
+
+  - outdoor_model: DX17VSS481
+    indoor_model: CHPE4860D4
+    coil_orientation: horizontal
+    furnace_model: DM80VC0804CN
+    ahri_reference_number: "202357173"
+    seer: 16
+
+  - outdoor_model: DX17VSS601
+    indoor_model: CAPE4961C4
+    coil_orientation: upflow
+    furnace_model: DM80VC1005CN
+    ahri_reference_number: "202357199"
+    seer: 16
+
+  - outdoor_model: DX17VSS601
+    indoor_model: CHPE4860D4
+    coil_orientation: horizontal
+    furnace_model: DM80VC1005CN
+    ahri_reference_number: "202357200"
+    seer: 16

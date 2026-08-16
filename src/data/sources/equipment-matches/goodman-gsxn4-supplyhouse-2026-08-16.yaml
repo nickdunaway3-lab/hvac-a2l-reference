@@ -1,0 +1,118 @@
+# Ingestion batch: Goodman GSXN4 ("SEER2 AC Value Systems") outdoor-unit
+# matchups, transcribed verbatim from a distributor-hosted quick-reference
+# PDF (page 1 of the source document).
+#
+# This is NOT Goodman's own primary documentation and NOT the AHRI Directory
+# itself — it's a third-party compiled chart. Every row is therefore left at
+# confidence: needs_review until independently spot-checked against the AHRI
+# public certificate lookup (ahridirectory.org, single-record lookups only —
+# see DECISIONS.md on why we never bulk-query or reproduce that directory).
+#
+# Refrigerant type is deliberately omitted: the source document has no
+# refrigerant column, and brand-level general knowledge ("Goodman uses R-32")
+# is not a substitute for a model-specific source.
+document:
+  source_url: "https://www.supplyhouse.com/product_files/Goodman-CHPTA2426B4-Quick-Reference-Guide.pdf"
+  source_type: distributor_compiled_reference
+  retrieved_at: 2026-08-16
+  brand: Goodman
+  confidence: needs_review
+
+records:
+  - outdoor_model: GSXN401810
+    indoor_model: CAPTA1818B4
+    coil_orientation: upflow
+    furnace_model: GM9S800603AN
+    ahri_reference_number: "208786152"
+    seer2: 14.5
+
+  - outdoor_model: GSXN401810
+    indoor_model: CHPTA1822A4
+    coil_orientation: horizontal
+    furnace_model: GM9S800603AN
+    ahri_reference_number: "208791168"
+    seer2: 14.5
+
+  - outdoor_model: GSXN402410
+    indoor_model: CAPTA2422B4
+    coil_orientation: upflow
+    furnace_model: GM9S800803BN
+    ahri_reference_number: "208791369"
+    seer2: 14.5
+
+  - outdoor_model: GSXN402410
+    indoor_model: CHPTA2426B4
+    coil_orientation: horizontal
+    furnace_model: GM9S800803BN
+    ahri_reference_number: "208791437"
+    seer2: 14.5
+
+  - outdoor_model: GSXN403010
+    indoor_model: CAPTA3026B4
+    coil_orientation: upflow
+    furnace_model: GM9S800803BN
+    ahri_reference_number: "208791655"
+    seer2: 14.5
+
+  - outdoor_model: GSXN403010
+    indoor_model: CHPTA3026B4
+    coil_orientation: horizontal
+    furnace_model: GM9S800803BN
+    ahri_reference_number: "208791705"
+    seer2: 14.5
+
+  - outdoor_model: GSXN403610
+    indoor_model: CAPTA3626B4
+    coil_orientation: upflow
+    furnace_model: GM9S800803BN
+    ahri_reference_number: "208799984"
+    seer2: 14.5
+
+  - outdoor_model: GSXN403610
+    indoor_model: CHPTA3630B4
+    coil_orientation: horizontal
+    furnace_model: GM9S800803BN
+    ahri_reference_number: "208799996"
+    seer2: 14.5
+
+  - outdoor_model: GSXN404210
+    indoor_model: CAPT4961C4
+    coil_orientation: upflow
+    furnace_model: GM9S800804CN
+    ahri_reference_number: "208800232"
+    seer2: 15
+
+  - outdoor_model: GSXN404210
+    indoor_model: CHPT4860D4
+    coil_orientation: horizontal
+    furnace_model: GM9S800804CN
+    ahri_reference_number: "208800244"
+    seer2: 15
+
+  - outdoor_model: GSXN404810
+    indoor_model: CAPT4961C4
+    coil_orientation: upflow
+    furnace_model: GM9S800804CN
+    ahri_reference_number: "208800418"
+    seer2: 14.3
+
+  - outdoor_model: GSXN404810
+    indoor_model: CHPT4860D4
+    coil_orientation: horizontal
+    furnace_model: GM9S800804CN
+    ahri_reference_number: "208800457"
+    seer2: 14
+
+  - outdoor_model: GSXN406010
+    indoor_model: CAPT4961C4
+    coil_orientation: upflow
+    furnace_model: GM9S801005CN
+    ahri_reference_number: "208800535"
+    seer2: 14
+
+  - outdoor_model: GSXN406010
+    indoor_model: CHPT4860D5
+    coil_orientation: horizontal
+    furnace_model: GM9S801005CN
+    ahri_reference_number: "208800545"
+    seer2: 14
