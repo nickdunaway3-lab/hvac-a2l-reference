@@ -1,0 +1,17 @@
+---
+/**
+ * FTC Endorsement Guides (16 CFR Part 255) require this near the links it
+ * covers, not buried in a footer. Placed once per page, at the top, by Base
+ * layout — a single disclosure covering every affiliate link on the page is
+ * sufficient as long as it's clearly visible and stays that way while
+ * scrolling. Only render this on pages that actually have affiliate links
+ * (Base.astro's `hasAffiliateLinks` prop) — a disclosure on a page with
+ * nothing to disclose dilutes the ones that matter.
+ */
+---
+
+<p class="affiliate-disclosure">
+  Some links on this page are affiliate links — we may earn a commission if you
+  buy through them, at no extra cost to you. This never affects which products or
+  contractors we mention, or the specs we report.
+</p>

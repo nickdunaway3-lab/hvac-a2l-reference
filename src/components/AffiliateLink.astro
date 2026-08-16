@@ -1,0 +1,31 @@
+---
+import { networks, type NetworkId } from "../lib/affiliateLinks";
+
+interface Props {
+  network: NetworkId;
+  /** Network-specific destination identifier, e.g. an Amazon ASIN. */
+  destination: string;
+}
+const { network, destination } = Astro.props;
+
+const url = networks[network].buildUrl(destination);
+
+if (import.meta.env.DEV && !url) {
+  console.warn(
+    `[AffiliateLink] "${networks[network].label}" has no tag configured yet — ` +
+      `rendering plain text instead of a link for destination "${destination}".`,
+  );
+}
+---
+
+{
+  url ? (
+    <a href={url} target="_blank" rel="sponsored noopener noreferrer" class="affiliate-link">
+      <slot />
+    </a>
+  ) : (
+    <span>
+      <slot />
+    </span>
+  )
+}

@@ -1,9 +1,14 @@
 ---
+import AffiliateDisclosure from "../components/AffiliateDisclosure.astro";
+
 interface Props {
   title: string;
   description: string;
+  /** Set true on any page that uses <AffiliateLink /> — renders the FTC
+   * disclosure once, near the top, above the links it covers. */
+  hasAffiliateLinks?: boolean;
 }
-const { title, description } = Astro.props;
+const { title, description, hasAffiliateLinks = false } = Astro.props;
 ---
 
 <!doctype html>
@@ -71,6 +76,16 @@ const { title, description } = Astro.props;
       }
       .source-links { font-size: 0.82rem; margin-top: 0.25rem; }
       .source-links a { color: var(--link); }
+      .affiliate-disclosure {
+        background: var(--bg-subtle);
+        border: 1px solid var(--line);
+        border-radius: 0.4rem;
+        padding: 0.6rem 0.9rem;
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin: 0 0 1.5rem;
+      }
+      .affiliate-link { color: var(--link); }
     </style>
   </head>
   <body>
@@ -81,6 +96,7 @@ const { title, description } = Astro.props;
       </nav>
     </header>
     <main>
+      {hasAffiliateLinks && <AffiliateDisclosure />}
       <slot />
     </main>
     <footer>

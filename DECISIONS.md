@@ -137,6 +137,27 @@ Newest entries at the bottom.
   before shipping. It links to the general public search page with
   instructions instead, rather than shipping an unverified guessed URL.
 
+## Affiliate-link infrastructure (2026-08-16)
+
+- No affiliate accounts are approved yet (Amazon Associates, Modernize, etc.
+  all require live content to review first — see the Phase 1 monetization
+  notes above). Built the infrastructure anyway, wired to nothing real yet,
+  same discipline as the empty content collections: `src/lib/affiliateLinks.ts`
+  reads each network's tag from a build-time env var
+  (e.g. `PUBLIC_AMAZON_ASSOCIATES_TAG`) and returns `null` if unset.
+  `<AffiliateLink>` renders plain text instead of a link when that happens —
+  it will never ship a fake, untagged, or guessed affiliate URL.
+- `<AffiliateDisclosure>` is FTC-required (16 CFR Part 255) copy, wired into
+  `Base.astro` behind a `hasAffiliateLinks` prop so it only appears on pages
+  that actually have affiliate links — a disclosure everywhere would dilute
+  the ones that matter.
+- Not attached to any page yet. The equipment-matching page has no natural
+  product tie-in (it's a lookup, not a purchase moment) — forcing an
+  affiliate link onto it would be exactly the kind of monetization-first
+  design this project is trying to avoid. This will get used for real once
+  content like leak-detection sensors or line-set flush kits exists, and
+  once real affiliate tags exist to configure.
+
 ## Tooling
 
 - Node.js LTS and GitHub CLI were not present on this machine; installed via
