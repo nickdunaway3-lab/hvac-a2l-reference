@@ -54,6 +54,24 @@ const equipmentMatches = defineCollection({
   }),
 });
 
+// --- Replacement parts (per outdoor unit model) -----------------------------
+// Deliberately NOT "most commonly fails" claims -- there's no sourceable
+// failure-rate data. These are official OEM part numbers from manufacturer
+// parts manuals, the same evidentiary bar as everything else on the site.
+const parts = defineCollection({
+  loader: sourcedBatchLoader("src/data/sources/parts"),
+  schema: z.object({
+    brand: z.string(),
+    outdoor_model: z.string(),
+    part_number: z.string(),
+    description: z.string(),
+    // Keyword-derived UI grouping label, not a manufacturer-stated fact --
+    // see the ingestion script that generates it.
+    category: z.string().optional(),
+    ...provenanceFields,
+  }),
+});
+
 // --- Content area 2: line set reuse ----------------------------------------
 const lineSetReuse = defineCollection({
   loader: sourcedBatchLoader("src/data/sources/line-set-reuse"),
@@ -107,6 +125,7 @@ const refrigerantAvailability = defineCollection({
 
 export const collections = {
   equipmentMatches,
+  parts,
   lineSetReuse,
   leakDetection,
   stateCodeAdoption,

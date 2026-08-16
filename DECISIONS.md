@@ -222,6 +222,77 @@ at all for this pass — only presentation did.
   the site is open, submit the form once and confirm a row lands in the
   "Leads" sheet.
 
+## Parts feature: corrected scope, real pilot, affiliate-ready (2026-08-16)
+
+Requested as "most common repair parts" per model with purchase links. The
+"most common" framing had to be pushed back on before building anything:
+there's no sourceable failure-rate data for HVAC parts by model — that
+number doesn't exist publicly, so providing it would mean either scraping
+someone's unverified opinion or generating a plausible-sounding list from
+general HVAC knowledge and attaching it to specific model numbers. That's
+exactly the fabrication the site's core rule exists to prevent, and doing
+it quietly would have undermined every "verified" badge already on the
+site. Proposed the sourceable version instead — official OEM part numbers
+per model — and confirmed it before building.
+
+- **Also checked and rejected**: scraping RepairClinic's own model→parts
+  lookup tool to build the dataset, even though they have a real affiliate
+  program (6% commission, 7-day cookie, confirmed in Phase 1-style
+  research). Their `robots.txt` explicitly disallows exactly that feature
+  (`Disallow: /Shop-For-Parts/*/*?model=*`, `/*?symptoms=odel`, `/*/data`,
+  `/*/params`). Same category of problem as the AHRI Directory: an
+  affiliate program grants permission to link *to* a site for a purchase,
+  not to scrape its own database. The two are easy to conflate and worth
+  keeping distinct going forward for any future retailer partner.
+- **Real primary source found and used instead**: Goodman's own official
+  GSXN4 repair parts manual (RP-G4328, © Goodman Manufacturing Company,
+  L.P., September 2022) — a real manufacturer document (copyright notice
+  in the document itself) that happens to cover exactly the 7 outdoor
+  models already in the GSXN4 equipment-match batch. Confirmed the
+  document's own "Expanded Model Nomenclature" section explicitly maps its
+  internal M1–M7 codes to those 7 model numbers (our data omits the
+  manual's trailing "AA" suffix — handled explicitly in the parser, not
+  assumed).
+- `scripts/ingest/parseGoodmanGsxn4Parts.mjs`: parses the manual's
+  "Functional Parts List" section (skipped the illustration/diagram
+  sections in this pass — more complex format, lower priority). Handles
+  line-wrapped model-code parentheticals. 68 (model, part) pairs from 29
+  distinct parts, each exploded into one row per model it applies to.
+  Verified by hand against the raw source text for one full model
+  (GSXN401810 / "M1") before trusting it — all 10 parts matched exactly.
+  Confidence: `verified` (manufacturer's own document, not a distributor
+  compilation, unlike the equipment-matching pilot batch).
+- New `parts` content collection: `brand`, `outdoor_model`, `part_number`,
+  `description`, optional `category` (a keyword-derived UI grouping label
+  for filtering — explicitly documented as *not* a manufacturer-stated
+  fact, to keep that distinction honest), plus the standard provenance
+  fields.
+- UI: parts render under a selected model in the Browse tab (not per
+  search result row — the same outdoor model can appear in many rows via
+  different indoor/furnace pairings, so tying parts to search results
+  would have repeated the same list redundantly; Browse's one-model-at-a-
+  time flow was already the right shape for this).
+- Affiliate link for parts: added a `repairclinic` network to
+  `affiliateLinks.ts` alongside `amazon`, same "return null / render plain
+  instead of fake" discipline. No program joined yet, so "Find this part"
+  currently links to RepairClinic's public search (plain, no `rel=sponsored`,
+  not yet monetized) — swaps automatically to a tracked affiliate link the
+  moment `PUBLIC_REPAIRCLINIC_AFFILIATE_URL_TEMPLATE` is set, no code
+  change needed.
+- Images for parts: same sourcing question as the brand logos, not
+  resolved yet — real product photos need a legitimate source (distributor
+  catalog, not scraped search results), left out of this pass and flagged
+  to the user rather than built without asking.
+- Verified via screenshot before shipping: selected Goodman → GSXN401810 in
+  Browse, confirmed all 10 real parts render with correct part numbers/
+  descriptions matching the source manual, "Find this part" links present,
+  explanatory copy uses the corrected framing (not "commonly fails").
+- **Scope note, stated plainly**: this covers exactly one model family
+  (GSXN4, 7 units) out of 8,683 equipment records. Scaling parts coverage
+  means finding and parsing a parts manual per model family — the same
+  incremental, source-by-source work as equipment matching itself, not a
+  one-time addition.
+
 ## Third usability pass: glossary, refrigerant column, brand badges (2026-08-16)
 
 Follow-up requests: brand pictures/logos, plain-English explanations for

@@ -48,6 +48,7 @@ import EquipmentGlossary from "../../components/EquipmentGlossary.astro";
   <EquipmentGlossary />
 
   <div id="results"></div>
+  <div id="parts-results"></div>
 
   <p class="callout">
     <strong>What "AHRI match" and the source links mean:</strong> AHRI (the industry
@@ -92,21 +93,55 @@ import EquipmentGlossary from "../../components/EquipmentGlossary.astro";
     notes: string | null;
   }
 
+  interface PartRecord {
+    brand: string;
+    outdoor_model: string;
+    part_number: string;
+    description: string;
+    category: string | null;
+    confidence: "verified" | "needs_review";
+    source_url: string;
+    retrieved_at: string;
+    notes: string | null;
+  }
+
   const searchInput = document.getElementById("table-search") as HTMLInputElement;
   const statusEl = document.getElementById("search-status")!;
   const resultsEl = document.getElementById("results")!;
   const brandChipsEl = document.getElementById("brand-chips")!;
   const modelListEl = document.getElementById("model-list")!;
+  const partsEl = document.getElementById("parts-results")!;
   const MIN_QUERY_LENGTH = 3;
   const MAX_RESULTS = 200;
+
+  // Left unset until RepairClinic's affiliate program is actually joined --
+  // see DECISIONS.md and src/lib/affiliateLinks.ts. Until then this is a
+  // plain, non-affiliate search link: still useful, not yet monetized.
+  const REPAIRCLINIC_AFFILIATE_TEMPLATE = import.meta.env
+    .PUBLIC_REPAIRCLINIC_AFFILIATE_URL_TEMPLATE as string | undefined;
+  function partShopUrl(partNumber: string) {
+    if (REPAIRCLINIC_AFFILIATE_TEMPLATE) {
+      return { url: REPAIRCLINIC_AFFILIATE_TEMPLATE.replace("{query}", encodeURIComponent(partNumber)), isAffiliate: true };
+    }
+    return {
+      url: `https://www.repairclinic.com/Shop-For-Parts?query=${encodeURIComponent(partNumber)}`,
+      isAffiliate: false,
+    };
+  }
 
   let dataPromise: Promise<MatchRecord[]> | null = null;
   function loadData() {
     dataPromise ??= fetch("/data/equipment-matches.json").then((r) => r.json());
     return dataPromise;
   }
+  let partsDataPromise: Promise<PartRecord[]> | null = null;
+  function loadParts() {
+    partsDataPromise ??= fetch("/data/parts.json").then((r) => r.json());
+    return partsDataPromise;
+  }
   // Warm the cache in the background so switching to Browse feels instant.
   loadData();
+  loadParts();
 
   function escapeHtml(s: string) {
     return s.replace(
@@ -204,6 +239,57 @@ import EquipmentGlossary from "../../components/EquipmentGlossary.astro";
     debounceTimer = setTimeout(runSearch, 150);
   });
 
+  function renderPartRow(p: PartRecord) {
+    const { url, isAffiliate } = partShopUrl(p.part_number);
+    const retrievedLabel = p.retrieved_at.slice(0, 10);
+    return `
+      <tr>
+        <td>${escapeHtml(p.part_number)}</td>
+        <td>${escapeHtml(p.description)}${p.category ? `<div class="note">${escapeHtml(p.category)}</div>` : ""}</td>
+        <td>
+          <a href="${url}" target="_blank" rel="${isAffiliate ? "sponsored " : ""}noopener noreferrer" class="${isAffiliate ? "affiliate-link" : ""}">
+            Find this part
+          </a>
+        </td>
+        <td>
+          <details class="row-details">
+            <summary>source &amp; confidence ▾</summary>
+            <div class="row-details-content">
+              <span class="badge ${p.confidence}">${p.confidence === "verified" ? "Verified" : "Unconfirmed — check before relying on this"}</span>
+              <p class="source-links">
+                <a href="${p.source_url}" target="_blank" rel="noopener noreferrer">Source</a>
+                · retrieved ${retrievedLabel}
+              </p>
+            </div>
+          </details>
+        </td>
+      </tr>
+    `;
+  }
+
+  async function renderPartsForModel(brand: string, model: string) {
+    const parts = await loadParts();
+    const matches = parts.filter((p) => p.brand === brand && p.outdoor_model === model);
+    if (!matches.length) {
+      partsEl.innerHTML = "";
+      return;
+    }
+    partsEl.innerHTML = `
+      <h3>Parts for ${escapeHtml(model)}</h3>
+      <p class="note">
+        Official manufacturer part numbers for this unit, not a guess at what tends to fail --
+        there's no reliable public data on which parts break most often, so this site doesn't
+        claim to know that. "Find this part" searches RepairClinic${REPAIRCLINIC_AFFILIATE_TEMPLATE ? " (an affiliate link -- see the disclosure above)" : ""}.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Part #</th><th>Description</th><th>Shop</th><th>Source</th></tr>
+        </thead>
+        <tbody>${matches.map(renderPartRow).join("")}</tbody>
+      </table>
+    `;
+  }
+
   // --- Browse tab ---
   let browseInitialized = false;
   let selectedBrand: string | null = null;
@@ -229,6 +315,7 @@ import EquipmentGlossary from "../../components/EquipmentGlossary.astro";
         chip.setAttribute("aria-pressed", "true");
         selectedBrand = chip.dataset.brand!;
         resultsEl.innerHTML = "";
+        partsEl.innerHTML = "";
         statusEl.textContent = "";
 
         const models = [...new Set(data.filter((r) => r.brand === selectedBrand).map((r) => r.outdoor_model))].sort();
@@ -243,6 +330,7 @@ import EquipmentGlossary from "../../components/EquipmentGlossary.astro";
             const model = modelChip.dataset.model!;
             const matches = data.filter((r) => r.brand === selectedBrand && r.outdoor_model === model);
             renderResults(matches, "No matches found.");
+            renderPartsForModel(selectedBrand!, model);
           });
         });
       });
@@ -261,6 +349,7 @@ import EquipmentGlossary from "../../components/EquipmentGlossary.astro";
       const target = btn.dataset.tab!;
       for (const [key, panel] of Object.entries(panels)) panel.hidden = key !== target;
       resultsEl.innerHTML = "";
+      partsEl.innerHTML = "";
       statusEl.textContent = target === "search" ? `Type at least ${MIN_QUERY_LENGTH} characters of a model number to search.` : "";
       if (target === "browse") initBrowse();
     });
